@@ -3,7 +3,7 @@ project:
   title:        "ece298a term project -- UART Communication System"      # Project title
   author:       "Peter & John"      # Your name
   discord:      "ultrasword, jonz9"      # Your discord username, for communication and automatically assigning you a Tapeout role (optional)
-  description:  ""      # One line description of what your project does
+  description:  "A UART Communication system. That's literally it."      # One line description of what your project does
   language:     "Verilog" # other examples include SystemVerilog, Amaranth, VHDL, etc
   clock_hz:     20000000       # Clock frequency in Hz (or 0 if not applicable)
 
