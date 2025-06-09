@@ -16,17 +16,21 @@ module tt_um_ultrasword_jonz9 (
     input  wire       rst_n     // reset_n - low to reset
 );
 
+  wire [2:0] counter_out;
+
   // All output pins must be assigned. If not used, assign to 0.
   assign uo_out  = ui_in + uio_in;  // Example: ou_out is the sum of ui_in and uio_in
-  // assign uio_out = 0;
   assign uio_oe  = 0;
+  assign uo_out[2:0] = counter_out; // Example: using the counter output in uo_out
+  assign uio_out[7:3] = 0; // Assign unused bits to 0
+  assign uio_out = 0;
 
 
   tt_um_counter_3b counter (
       .clk(clk),
       .rst_n(rst_n),
       .ena(ena),
-      .count(uo_out[2:0]) // Example: using the counter output in uo_out
+      .count(counter_out) // Example: using the counter output in uo_out
   );
 
 
