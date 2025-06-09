@@ -18,7 +18,7 @@ module tt_um_hamming_decoder_7_4 (
     input wire ena, // decides when to start "decoding"
     input wire decode_in,
 
-    output wire valid_out;
+    output wire valid_out,
     output wire[3:0] decode_out
 );
 
