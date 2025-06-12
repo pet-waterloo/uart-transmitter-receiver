@@ -17,7 +17,7 @@ module tt_um_ultrasword_jonz9 (
 );
 
   wire [2:0] counter_out;
-
+x
   // All output pins must be assigned. If not used, assign to 0.
   // REMOVED: assign uo_out  = ui_in + uio_in;  // This conflicts with line 24
   assign uo_out[2:0] = counter_out; // Counter output on lower 3 bits

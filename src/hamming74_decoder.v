@@ -9,7 +9,7 @@
 `default_nettype none
 
 
-module tt_um_hamming_decoder_7_4 (
+module tt_um_hamming_decoder_74 (
     // 1 wire input
     // 4 wire output
 
@@ -24,7 +24,7 @@ module tt_um_hamming_decoder_7_4 (
 
     // -------------------------------------------- //
     // counter bits
-    reg [2:0] c; 
+    wire [2:0] c;
     tt_um_counter_3b counter (
         .clk(clk),
         .rst_n(rst_n),
