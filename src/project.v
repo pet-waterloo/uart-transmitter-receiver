@@ -17,11 +17,13 @@ module tt_um_ultrasword_jonz9 (
 );
 
   wire [2:0] counter_out;
-x
+  reg [1:0] state; // 2-bit state for the state machine
+
   // All output pins must be assigned. If not used, assign to 0.
   // REMOVED: assign uo_out  = ui_in + uio_in;  // This conflicts with line 24
   assign uo_out[2:0] = counter_out; // Counter output on lower 3 bits
-  assign uo_out[7:3] = 5'b0;        // Upper 5 bits set to 0
+  assign uo_out[7:6] = state; // State machine output on upper 2 bits
+  assign uo_out[5:3] = 3'b0;        // set middle bits to 0
   assign uio_out = 8'b0;            // All uio_out bits to 0
   assign uio_oe  = 8'b0;            // All uio_oe bits to 0
 
@@ -30,6 +32,13 @@ x
       .rst_n(rst_n),
       .ena(ena),
       .count(counter_out)
+  );
+
+  tt_um_statmachine_4 statemachine (
+      .clk(clk),
+      .rst_n(rst_n),
+      .ena(counter_out[2]), // NOTE: send the 3rd bit of counter_out as enable
+      .count(state) // Use lower 2 bits of uo_out for state machine
   );
 
   // List all unused inputs to prevent warnings
