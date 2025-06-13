@@ -7,7 +7,7 @@
 `default_nettype none
 
 // 3-bit counter module ~ 8 states
-module tt_um_counter_3b (
+module tt_um_counter_8b (
     input  wire clk,      // clock
     input  wire rst_n,   // reset_n - low to reset
     input  wire ena,     // enable signal (active high)
