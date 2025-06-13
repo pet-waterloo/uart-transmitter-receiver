@@ -34,7 +34,7 @@ module tt_um_ultrasword_jonz9 (
       .count(counter_out)
   );
 
-  tt_um_statmachine_4 statemachine (
+  tt_um_statemachine_4 statemachine (
       .clk(clk),
       .rst_n(rst_n),
       .ena(counter_out[2]), // NOTE: send the 3rd bit of counter_out as enable
