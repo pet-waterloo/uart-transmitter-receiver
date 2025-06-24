@@ -17,13 +17,13 @@ module tt_um_ultrasword_jonz9 (
 );
 
   wire [2:0] counter_out;
-  reg [1:0] state; // 2-bit state for the state machine
+//   reg [1:0] state; // 2-bit state for the state machine
 
   // All output pins must be assigned. If not used, assign to 0.
   // REMOVED: assign uo_out  = ui_in + uio_in;  // This conflicts with line 24
-  assign uo_out[2:0] = counter_out; // Counter output on lower 3 bits
-  assign uo_out[7:6] = state; // State machine output on upper 2 bits
-  assign uo_out[5:3] = 3'b0;        // set middle bits to 0
+//   assign uo_out[2:0] = counter_out; // Counter output on lower 3 bits
+//   assign uo_out[7:6] = state; // State machine output on upper 2 bits
+  assign uo_out[6:4] = 3'b0;        // set middle bits to 0
   assign uio_out = 8'b0;            // All uio_out bits to 0
   assign uio_oe  = 8'b0;            // All uio_oe bits to 0
 
@@ -34,11 +34,20 @@ module tt_um_ultrasword_jonz9 (
       .count(counter_out)
   );
 
-  tt_um_statemachine_4 statemachine (
-      .clk(clk),
-      .rst_n(rst_n),
-      .ena(counter_out[2]), // NOTE: send the 3rd bit of counter_out as enable
-      .count(state) // Use lower 2 bits of uo_out for state machine
+//   tt_um_statemachine_4 statemachine (
+//       .clk(clk),
+//       .rst_n(rst_n),
+//       .ena(counter_out[2]), // NOTE: send the 3rd bit of counter_out as enable
+//       .count(state) // Use lower 2 bits of uo_out for state machine
+//   );
+
+  tt_um_hamming_decoder_74 decoder74 (
+    .clk(clk),
+    .rst_n(rst_n),
+    .ena(ena),
+    .decode_in(ui_in[0]), // Use the first bit of ui_in as input for decoding
+    .valid_out(uo_out[7]), // Use the first bit of uo_out as valid output
+    .decode_out(uo_out[3:0]) // Use bits 4 to 1 of uo_out for decoded output
   );
 
   // List all unused inputs to prevent warnings

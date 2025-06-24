@@ -16,67 +16,76 @@ module tt_um_hamming_decoder_74 (
     input wire clk,
     input wire rst_n, // reset_n - low to reset
     input wire ena, // decides when to start "decoding"
+
+    // single line of input
     input wire decode_in,
 
-    output wire valid_out,
-    output wire[3:0] decode_out
+    // 1 byte of output
+    output wire valid_out, // indicates if the output is valid
+    output reg [3:0] decode_out // decoded output
 );
+    
 
     // -------------------------------------------- //
-    // counter bits
-    wire [2:0] c;
-    tt_um_counter_3b counter (
+    // memory locations
+
+    // counter for input tracking
+    reg [6:0] input_buffer; // 7-bit buffer for Hamming code input
+
+
+    // -------------------------------------------- //
+    // objects
+    tt_um_counter_3b counter3b (
         .clk(clk),
         .rst_n(rst_n),
         .ena(ena),
-        .count(c[2:0])
+        .count(counter) // Use lower 3 bits for counter output
     );
 
     // -------------------------------------------- //
-    // input register -- buffers 7 bits of input
-    reg [6:0] decode_in_reg;
-    reg stream_in_reg;
-
-    assign stream_in_reg = decode_in;
-
-    // -------------------------------------------- //
-    // output register -- buffers 4 bits of output
-    reg [3:0] decode_out_reg;
-    reg valid_out_reg;
-
-    assign valid_out = valid_out_reg;
-    assign decode_out = decode_out_reg;
-
-    // -------------------------------------------- //
-    // logic for decoding -- check if enabled
+    // logic
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            decode_in_reg <= 0;
-            decode_out_reg <= 0;
-            valid_out_reg <= 0;
+            // reset logic
+            decode_out <= 0;
+            valid_out <= 0;
         end else if (ena) begin
-            // collect 7 bits -- assume synced system
-            //          bits pushed to left (new data into right // LSB)
-            decode_in_reg <= {decode_in_reg[1:6], stream_in_reg};
-            
-            // Check if we have enough bits to decode
-            if (c == 3'b111) begin
-                // decoding logic
+            // if component is ENABLED
 
+            // if 4 bits finished
+            if (counter == 3'b111) begin
+                // reset counter
+                counter <= 0;
+                
+                // set valid output
+                valid_out <= 1;
+                
+                // decode the input
+                decode_out[0] <= input_buffer[0];
+                decode_out[1] <= input_buffer[1];
+                decode_out[2] <= input_buffer[2];
+                decode_out[3] <= input_buffer[4];
 
-                // finished
-                valid_out_reg <= 1; // Set valid output
+                // use syndrome bits to check
+                wire [2:0] syndrome = {
+                    input_buffer[6] ^ input_buffer[4] ^ input_buffer[2] ^ input_buffer[0], // S1
+                    input_buffer[5] ^ input_buffer[4] ^ input_buffer[1] ^ input_buffer[0], // S2
+                    input_buffer[3] ^ input_buffer[2] ^ input_buffer[1] ^ input_buffer[0]  // S3
+                };
+                if (syndrome == 3'b000) begin
+                    // no error detected, do nothing
+                end else begin
+                    // error detected, flip the bit at syndrome position
+                    decode_out[syndrome] <= ~decode_out[syndrome]; // flip the bit at syndrome position
+                end 
 
-            end else if (c == 3'b000) begin
-                // Reset the output when we have no bits to decode
-                decode_out_reg <= 0;
-                valid_out_reg <= 0; // Clear valid output
+            end else begin
+                // set counter index to be received value
+                input_buffer[counter] <= decode_in;
             end
-
             
         end else begin
-            // If not enabled, keep the previous state
-            valid_out_reg <= 0; // Clear valid output
+            valid_out <= 0;
         end
     end
 
