@@ -57,7 +57,7 @@ async def test_project(dut):
         data_bits = dut.uo_out.value & 0x0F
 
         dut._log.info(
-            f"Cycle {i+1}: Sent bit={bit}, Valid={valid_bit}, Data={data_bits:04b}, Full output={dut.uo_out.value:08b}"
+            f"Cycle {i+1}: Sent bit={bit}, Valid={int(valid_bit)}, Data={int(data_bits):04b}, Full output={int(dut.uo_out.value):08b}"
         )
 
     # Wait a few more cycles to ensure processing completes
@@ -66,7 +66,7 @@ async def test_project(dut):
         valid_bit = (dut.uo_out.value & 0x80) >> 7
         data_bits = dut.uo_out.value & 0x0F
         dut._log.info(
-            f"Additional cycle {i+1}: Valid={valid_bit}, Data={data_bits:04b}, Full output={dut.uo_out.value:08b}"
+            f"Additional cycle {i+1}: Valid={int(valid_bit)}, Data={int(data_bits):04b}, Full output={int(dut.uo_out.value):08b}"
         )
 
     # Test with a bit error
@@ -91,7 +91,7 @@ async def test_project(dut):
         data_bits = dut.uo_out.value & 0x0F
 
         dut._log.info(
-            f"Error test cycle {i+1}: Sent bit={bit}, Valid={valid_bit}, Data={data_bits:04b}, Full output={dut.uo_out.value:08b}"
+            f"Error test cycle {i+1}: Sent bit={bit}, Valid={int(valid_bit)}, Data={int(data_bits):04b}, Full output={int(dut.uo_out.value):08b}"
         )
 
     # Check final output
@@ -100,7 +100,7 @@ async def test_project(dut):
     data_bits = dut.uo_out.value & 0x0F
 
     dut._log.info(
-        f"Final result: Valid={valid_bit}, Data={data_bits:04b}, Full output={dut.uo_out.value:08b}"
+        f"Final result: Valid={int(valid_bit)}, Data={int(data_bits):04b}, Full output={int(dut.uo_out.value):08b}"
     )
 
     # This should pass if your decoder is working
