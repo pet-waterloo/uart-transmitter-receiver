@@ -2,7 +2,7 @@
 
 
 
-`default_nettype 
+`default_nettype none
 
 module tt_um_uart_receiver (
     input  wire clk,      // clock
