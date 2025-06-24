@@ -1,6 +1,3 @@
-
-
-
 `default_nettype none
 
 // 3-bit counter module ~ 8 states
@@ -12,15 +9,11 @@ module tt_um_statemachine_4 (
 );
 
     // Counter logic
-    always @(posedge ena) begin
-        if (ena) begin
-            count <= count + 1; // Increment counter on each enable signal
-        end 
-    end
-
-    always @(negedge rst_n) begin
+    always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            count <= 2'b0; // Reset counter to 0 on reset
+            count <= 2'b0; // Reset counter to 0
+        end else if (ena) begin
+            count <= count + 1; // Increment counter on enable
         end
     end
 

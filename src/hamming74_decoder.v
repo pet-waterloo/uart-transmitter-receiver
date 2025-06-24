@@ -1,4 +1,3 @@
-
 /**
     * Hamming Decoder Module
     * This module implements a simple Hamming decoder.
@@ -94,5 +93,10 @@ module tt_um_hamming_decoder_74 (
     end
 
     // -------------------------------------------- //
+
+    // Choose one design pattern - using the Hamming decoder:
+    assign uo_out[3:0] = decode_out; // From Hamming decoder
+    assign uo_out[6:4] = 3'b0;       // Middle bits
+    assign uo_out[7] = valid_out;    // Valid bit from decoder
 
 endmodule

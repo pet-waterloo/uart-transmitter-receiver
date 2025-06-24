@@ -16,18 +16,20 @@ module tt_um_ultrasword_jonz9 (
     input  wire       rst_n     // reset_n - low to reset
 );
 
+  // Internal wires
   wire [2:0] counter_out;
+  wire valid_out;
+  wire [3:0] decode_out;
 
-//   reg [1:0] state; // 2-bit state for the state machine
-
-  // All output pins must be assigned. If not used, assign to 0.
-  // REMOVED: assign uo_out  = ui_in + uio_in;  // This conflicts with line 24
-//   assign uo_out[2:0] = counter_out; // Counter output on lower 3 bits
-//   assign uo_out[7:6] = state; // State machine output on upper 2 bits
-  assign uo_out[6:4] = 3'b0;        // set middle bits to 0
+  // Connect output signals
+  assign uo_out[3:0] = decode_out;  // Lower 4 bits from decoder
+  assign uo_out[6:4] = 3'b0;        // Middle 3 bits set to 0
+  assign uo_out[7] = valid_out;     // MSB from decoder valid signal
+  
   assign uio_out = 8'b0;            // All uio_out bits to 0
   assign uio_oe  = 8'b0;            // All uio_oe bits to 0
 
+  // Instantiate 3-bit counter
   tt_um_counter_3b counter (
       .clk(clk),
       .rst_n(rst_n),
@@ -35,23 +37,18 @@ module tt_um_ultrasword_jonz9 (
       .count(counter_out)
   );
 
-//   tt_um_statemachine_4 statemachine (
-//       .clk(clk),
-//       .rst_n(rst_n),
-//       .ena(counter_out[2]), // NOTE: send the 3rd bit of counter_out as enable
-//       .count(state) // Use lower 2 bits of uo_out for state machine
-//   );
-
+  // Instantiate Hamming decoder
   tt_um_hamming_decoder_74 decoder74 (
     .clk(clk),
     .rst_n(rst_n),
     .ena(ena),
-    .decode_in(ui_in[0]), // Use the first bit of ui_in as input for decoding
-    .valid_out(uo_out[7]), // Use the first bit of uo_out as valid output
-    .decode_out(uo_out[3:0]) // Use bits 4 to 1 of uo_out for decoded output
+    .decode_in(ui_in[0]),      // Use the first bit of ui_in as input for decoding
+    .valid_out(valid_out),     // Use internal wire for valid output
+    .decode_out(decode_out)    // Use internal wire for decoded output
   );
 
   // List all unused inputs to prevent warnings
-  wire _unused = &{ui_in, uio_in, ena, 1'b0};
+  // Not using ui_in[7:1] and all of uio_in
+  wire _unused = &{ui_in[7:1], uio_in, counter_out, 1'b0};
 
 endmodule
