@@ -59,27 +59,28 @@ module tt_um_hamming_decoder_74 (
                 // reset counter
                 counter <= 0;
                 
-                // set valid output
-                valid_out <= 1;
-                
-                // decode the input
-                decode_out[0] <= input_buffer[0];
-                decode_out[1] <= input_buffer[1];
-                decode_out[2] <= input_buffer[2];
-                decode_out[3] <= input_buffer[4];
-
                 // use syndrome bits to check
                 syndrome = {
                     input_buffer[6] ^ input_buffer[4] ^ input_buffer[2] ^ input_buffer[0], // S1
                     input_buffer[5] ^ input_buffer[4] ^ input_buffer[1] ^ input_buffer[0], // S2
                     input_buffer[3] ^ input_buffer[2] ^ input_buffer[1] ^ input_buffer[0]  // S3
                 };
+
                 if (syndrome == 3'b000) begin
                     // no error detected, do nothing
                 end else begin
                     // error detected, flip the bit at syndrome position
-                    decode_out[syndrome] <= ~decode_out[syndrome]; // flip the bit at syndrome position
-                end 
+                    input_buffer[syndrome] <= ~input_buffer[syndrome]; // flip the bit at syndrome position
+                end
+
+                // decode the input
+                decode_out[0] <= input_buffer[0];
+                decode_out[1] <= input_buffer[1];
+                decode_out[2] <= input_buffer[2];
+                decode_out[3] <= input_buffer[4];
+
+                // set valid output
+                valid_out <= 1;
 
             end else begin
                 // set counter index to be received value
