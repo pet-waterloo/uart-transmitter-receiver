@@ -32,6 +32,7 @@ module tt_um_hamming_decoder_74 (
     // counter for input tracking
     reg [6:0] input_buffer; // 7-bit buffer for Hamming code input
     wire [2:0] syndrome;
+    reg [2:0] counter;
 
 
     // -------------------------------------------- //
