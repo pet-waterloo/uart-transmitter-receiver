@@ -54,10 +54,11 @@ async def test_project(dut):
 
         # Log the current state
         valid_bit = (dut.uo_out.value & 0x80) >> 7
+        syndrome_out = (dut.uo_out.value & 0x70) >> 4
         data_bits = dut.uo_out.value & 0x0F
 
         dut._log.info(
-            f"Cycle {i+1}: Sent bit={bit}, Valid={int(valid_bit)}, Data={int(data_bits):04b}, Full output={int(dut.uo_out.value):08b}"
+            f"Cycle {i+1}: Sent bit={bit}, Valid={int(valid_bit)}, Syndrome={int(syndrome_out):03b}, Data={int(data_bits):04b}, Full output={int(dut.uo_out.value):08b}"
         )
 
     # Wait a few more cycles to ensure processing completes
@@ -65,8 +66,9 @@ async def test_project(dut):
         await ClockCycles(dut.clk, 1)
         valid_bit = (dut.uo_out.value & 0x80) >> 7
         data_bits = dut.uo_out.value & 0x0F
+        syndrome_out = (dut.uo_out.value & 0x70) >> 4
         dut._log.info(
-            f"Additional cycle {i+1}: Valid={int(valid_bit)}, Data={int(data_bits):04b}, Full output={int(dut.uo_out.value):08b}"
+            f"Additional cycle {i+1}: Valid={int(valid_bit)}, Syndrome={int(syndrome_out):03b}, Data={int(data_bits):04b}, Full output={int(dut.uo_out.value):08b}"
         )
 
     # Test with a bit error
@@ -88,19 +90,21 @@ async def test_project(dut):
         await ClockCycles(dut.clk, 1)
 
         valid_bit = (dut.uo_out.value & 0x80) >> 7
+        syndrome_out = (dut.uo_out.value & 0x70) >> 4
         data_bits = dut.uo_out.value & 0x0F
 
         dut._log.info(
-            f"Error test cycle {i+1}: Sent bit={bit}, Valid={int(valid_bit)}, Data={int(data_bits):04b}, Full output={int(dut.uo_out.value):08b}"
+            f"Error test cycle {i+1}: Sent bit={bit}, Valid={int(valid_bit)}, Syndrome={int(syndrome_out):03b}, Data={int(data_bits):04b}, Full output={int(dut.uo_out.value):08b}"
         )
 
     # Check final output
     await ClockCycles(dut.clk, 1)
     valid_bit = (dut.uo_out.value & 0x80) >> 7
     data_bits = dut.uo_out.value & 0x0F
+    syndrome_out = (dut.uo_out.value & 0x70) >> 4
 
     dut._log.info(
-        f"Final result: Valid={int(valid_bit)}, Data={int(data_bits):04b}, Full output={int(dut.uo_out.value):08b}"
+        f"Final result: Valid={int(valid_bit)}, Syndrome={int(syndrome_out):03b}, Data={int(data_bits):04b}, Full output={int(dut.uo_out.value):08b}"
     )
 
     # This should pass if your decoder is working
