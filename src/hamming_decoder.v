@@ -5,9 +5,7 @@
     * It takes a single bit input and outputs a single bit.
 */
 
-
 `default_nettype none
-
 
 module tt_um_hamming_decoder_7_4 (
     // 1 wire input

@@ -1,7 +1,3 @@
-
-
-
-
 `default_nettype none
 
 // 3-bit counter module ~ 8 states
