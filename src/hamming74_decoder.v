@@ -8,21 +8,16 @@
 `default_nettype none
 
 module tt_um_hamming_decoder_74 (
-    // 1 wire input
-    // 4 wire output
-
     input wire clk,
     input wire rst_n, // reset_n - low to reset
     input wire ena, // decides when to start "decoding"
-
-    // single line of input
     input wire decode_in,
 
     // 1 byte of output
     output wire valid_out, // indicates if the output is valid
-    output wire [3:0] decode_out // decoded output
+    output wire [3:0] decode_out, // decoded output
 
-    // debug informatino
+    // debug information
     output wire [2:0] syndrome_out // syndrome bits for error detection
 );
     
