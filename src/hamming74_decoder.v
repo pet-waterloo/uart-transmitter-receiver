@@ -30,8 +30,10 @@ module tt_um_hamming_decoder_74 (
     // counter for input tracking
     reg [6:0] input_buffer; // 7-bit buffer for Hamming code input
     reg [2:0] syndrome;
-
     reg [2:0] counter;
+
+    reg [3:0] decode_out_reg; // 4-bit register for decoded output
+    reg valid_out_reg; // register for valid output
 
 
     // -------------------------------------------- //
@@ -48,8 +50,8 @@ module tt_um_hamming_decoder_74 (
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             // reset logic
-            decode_out_reg <= 0;
-            valid_out_reg <= 0;
+            decode_out_reg <= 4'b0000; // reset output to 0
+            valid_out_reg <= 1'b0;
         end else if (ena) begin
             // if component is ENABLED
 
