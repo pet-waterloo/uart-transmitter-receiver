@@ -31,6 +31,7 @@ module tt_um_hamming_decoder_74 (
 
     // counter for input tracking
     reg [6:0] input_buffer; // 7-bit buffer for Hamming code input
+    wire [2:0] syndrome;
 
 
     // -------------------------------------------- //
@@ -67,7 +68,7 @@ module tt_um_hamming_decoder_74 (
                 decode_out[3] <= input_buffer[4];
 
                 // use syndrome bits to check
-                wire [2:0] syndrome = {
+                syndrome = {
                     input_buffer[6] ^ input_buffer[4] ^ input_buffer[2] ^ input_buffer[0], // S1
                     input_buffer[5] ^ input_buffer[4] ^ input_buffer[1] ^ input_buffer[0], // S2
                     input_buffer[3] ^ input_buffer[2] ^ input_buffer[1] ^ input_buffer[0]  // S3
