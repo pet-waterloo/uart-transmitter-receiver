@@ -1,7 +1,3 @@
-
-
-
-
 `default_nettype none
 
 module tt_um_uart_receiver (
@@ -13,13 +9,13 @@ module tt_um_uart_receiver (
     output reg valid_out // Indicates if the received data is valid
 );
 
-    typedef enum [1:0] {
-        IDLE = 2'b00,
-        DECODE = 2'b01,
-        VALIDATE = 2'b10,
-        DONE = 2'b11
-    } state_t;
-    state_t state = IDLE; // Current state of the decoder
+    // State encoding
+    localparam [1:0] IDLE     = 2'b00,
+                     DECODE   = 2'b01,
+                     VALIDATE = 2'b10,
+                     DONE     = 2'b11;
+
+    reg [1:0] state; // Current state of the receiver
 
     reg [3:0] baud_rate; // oversample rate ~ 0-15 ticks
 
