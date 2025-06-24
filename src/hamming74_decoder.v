@@ -21,7 +21,7 @@ module tt_um_hamming_decoder_74 (
     input wire decode_in,
 
     // 1 byte of output
-    output wire valid_out, // indicates if the output is valid
+    output reg valid_out, // indicates if the output is valid
     output reg [3:0] decode_out // decoded output
 );
     
@@ -32,6 +32,7 @@ module tt_um_hamming_decoder_74 (
     // counter for input tracking
     reg [6:0] input_buffer; // 7-bit buffer for Hamming code input
     wire [2:0] syndrome;
+
     reg [2:0] counter;
 
 
