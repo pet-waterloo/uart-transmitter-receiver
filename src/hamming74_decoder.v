@@ -21,6 +21,9 @@ module tt_um_hamming_decoder_74 (
     // 1 byte of output
     output wire valid_out, // indicates if the output is valid
     output wire [3:0] decode_out // decoded output
+
+    // debug informatino
+    output wire [2:0] syndrome_out // syndrome bits for error detection
 );
     
     // -------------------------------------------- //
@@ -29,10 +32,11 @@ module tt_um_hamming_decoder_74 (
     // buffer and registers
     reg [6:0] input_buffer; // 7-bit buffer for Hamming code input
     reg [2:0] syndrome;
-    wire [2:0] counter; // Changed to wire since it's driven by counter3b
-
+    
     reg [3:0] decode_out_reg; // 4-bit register for decoded output
     reg valid_out_reg; // register for valid output
+
+    wire [2:0] counter; // Changed to wire since it's driven by counter3b
 
     // -------------------------------------------- //
     // objects
@@ -95,5 +99,6 @@ module tt_um_hamming_decoder_74 (
     // Output assignments
     assign valid_out = valid_out_reg;
     assign decode_out = decode_out_reg;
+    assign syndrome_out = syndrome;
 
 endmodule

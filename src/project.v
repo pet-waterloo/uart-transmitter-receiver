@@ -18,12 +18,13 @@ module tt_um_ultrasword_jonz9 (
 
   // Internal wires
   wire [2:0] counter_out;
-  wire valid_out;
   wire [3:0] decode_out;
+  wire [2:0] syndrome_out; // Not used, but declared for completeness
+  wire valid_out;
 
   // Connect output signals
-  assign uo_out[3:0] = decode_out;  // Lower 4 bits from decoder
-  assign uo_out[6:4] = 3'b0;        // Middle 3 bits set to 0
+  assign uo_out[0:3] = decode_out;  // Lower 4 bits from decoder
+  assign uo_out[4:6] = syndrome_out;        // Middle 3 bits set to 0
   assign uo_out[7] = valid_out;     // MSB from decoder valid signal
   
   assign uio_out = 8'b0;            // All uio_out bits to 0
@@ -44,7 +45,10 @@ module tt_um_ultrasword_jonz9 (
     .ena(ena),
     .decode_in(ui_in[0]),      // Use the first bit of ui_in as input for decoding
     .valid_out(valid_out),     // Use internal wire for valid output
-    .decode_out(decode_out)    // Use internal wire for decoded output
+    .decode_out(decode_out),    // Use internal wire for decoded output
+
+    // debug
+    .syndrome_out(syndrome_out) // Not used, but declared for completeness
   );
 
   // List all unused inputs to prevent warnings
