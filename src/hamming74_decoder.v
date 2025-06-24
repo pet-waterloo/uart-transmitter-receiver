@@ -61,7 +61,7 @@ module tt_um_hamming_decoder_74 (
                 counter <= 0;
                 
                 // use syndrome bits to check
-                syndrome = {
+                syndrome <= {
                     input_buffer[6] ^ input_buffer[4] ^ input_buffer[2] ^ input_buffer[0], // S1
                     input_buffer[5] ^ input_buffer[4] ^ input_buffer[1] ^ input_buffer[0], // S2
                     input_buffer[3] ^ input_buffer[2] ^ input_buffer[1] ^ input_buffer[0]  // S3

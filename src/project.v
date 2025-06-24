@@ -17,6 +17,7 @@ module tt_um_ultrasword_jonz9 (
 );
 
   wire [2:0] counter_out;
+
 //   reg [1:0] state; // 2-bit state for the state machine
 
   // All output pins must be assigned. If not used, assign to 0.
