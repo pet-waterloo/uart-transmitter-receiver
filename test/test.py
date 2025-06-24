@@ -38,35 +38,23 @@ async def test_project(dut):
     # --------------------------------------------------------- #
     # testing with hamming decoder
 
-    # S0 = 7 ^ 5 ^ 3 ^ 1
-    # S1 = 6 ^ 5 ^ 3 ^ 2
-    # S2 = 4 ^ 5 ^ 3 ^ 0
+    # Create a valid Hamming(7,4) codeword - "1111" data bits with appropriate parity
+    # Format: [p1 p2 d1 p3 d2 d3 d4] where p=parity, d=data
+    valid_codeword = "0001111"  # LSB first
 
-    # Using your existing input_line generation with slight modifications
-    input_line = "".join(
-        map(
-            lambda x: x[0:2] + x[3] + x[2] + x[4:],
-            [
-                # check + data
-                "000" + "1111",
-                "000" + "1111",
-            ],
-        )
-    )
-
-    dut._log.info(f"Sending input sequence: {input_line}")
+    dut._log.info(f"Sending valid codeword: {valid_codeword}")
 
     # Clock the data into the hamming decoder
-    for i, bit in enumerate(input_line):
-        # Set bit 0 of ui_in to the current bit (this is connected to decode_in in your project.v)
+    for i, bit in enumerate(valid_codeword):
+        # Set bit 0 of ui_in to the current bit
         dut.ui_in.value = int(bit)
 
         # Clock once
         await ClockCycles(dut.clk, 1)
 
         # Log the current state
-        valid_bit = (dut.uo_out.value & 0x80) >> 7  # Extract bit 7 (valid bit)
-        data_bits = dut.uo_out.value & 0x0F  # Extract bits 0-3 (data)
+        valid_bit = (dut.uo_out.value & 0x80) >> 7
+        data_bits = dut.uo_out.value & 0x0F
 
         dut._log.info(
             f"Cycle {i+1}: Sent bit={bit}, Valid={valid_bit}, Data={data_bits:04b}, Full output={dut.uo_out.value:08b}"
