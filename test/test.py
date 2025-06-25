@@ -54,7 +54,7 @@ async def test_project(dut):
             data_bits = _state[0:4]
 
             dut._log.info(
-                f"Cycle {i+1}: Sent bit={bit}, Valid={valid_bit}, Syndrome={syndrome_out}, Data={data_bits}, Full output={dut.uo_out.value}"
+                f"Cycle {i+1}: Sent bit={bit}, Valid={valid_bit}, Syndrome={syndrome_out}, Data={data_bits}, Full output={dut.uo_out.value}, UIO={dut.uio_out.value}"
             )
 
         # Wait a few more cycles to ensure processing completes
@@ -66,7 +66,7 @@ async def test_project(dut):
             data_bits = _state[0:4]
 
             dut._log.info(
-                f"Additional Cycle {i+1}: Sent bit={bit}, Valid={valid_bit}, Syndrome={syndrome_out}, Data={data_bits}, Full output={dut.uo_out.value}"
+                f"Additional Cycle {i+1}: Valid={valid_bit}, Syndrome={syndrome_out}, Data={data_bits}, Full output={dut.uo_out.value}, UIO={dut.uio_out.value}"
             )
 
     # ----------------------------------------------------------- #

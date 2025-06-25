@@ -18,7 +18,9 @@ module tt_um_hamming_decoder_74 (
     output wire [3:0] decode_out, // decoded output
 
     // debug information
-    output wire [2:0] syndrome_out // syndrome bits for error detection
+    output wire [2:0] debug_syndrome_out, // syndrome bits for error detection
+    output wire [2:0] debug_counter_out // current counter value for debugging
+
 );
     
     // -------------------------------------------- //
@@ -70,17 +72,14 @@ module tt_um_hamming_decoder_74 (
                     // no error detected, use buffer as-is
                 end else begin
                     // error detected, correct the bit at syndrome position
-                    input_buffer[syndrome] <= ~input_buffer[syndrome];
+                    input_buffer[syndrome - 1] <= ~input_buffer[syndrome - 1];
                 end
-
-                // decode the input
-                decode_out_reg[0] <= input_buffer[3];
-                decode_out_reg[1] <= input_buffer[5];
-                decode_out_reg[2] <= input_buffer[6];
-                decode_out_reg[3] <= input_buffer[7];
 
                 // set valid output
                 valid_out_reg <= 1'b1;
+
+                // set counter to 0
+                counter <= 3'b000;
             end else begin
                 // set counter index to be received value
                 input_buffer[counter] <= decode_in;
@@ -94,6 +93,15 @@ module tt_um_hamming_decoder_74 (
     // Output assignments
     assign valid_out = valid_out_reg;
     assign decode_out = decode_out_reg;
-    assign syndrome_out = syndrome;
+
+    // lowkey just assign directly
+    assign decode_out_reg[0] = input_buffer[3];
+    assign decode_out_reg[1] = input_buffer[5];
+    assign decode_out_reg[2] = input_buffer[6];
+    assign decode_out_reg[3] = input_buffer[7];
+
+    // debug
+    assign debug_syndrome_out = syndrome;
+    assign debug_counter_out = counter;
 
 endmodule
