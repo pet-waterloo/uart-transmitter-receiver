@@ -74,10 +74,10 @@ module tt_um_hamming_decoder_74 (
                 end
 
                 // decode the input
-                decode_out_reg[0] <= input_buffer[0];
-                decode_out_reg[1] <= input_buffer[1];
-                decode_out_reg[2] <= input_buffer[2];
-                decode_out_reg[3] <= input_buffer[4];
+                decode_out_reg[0] <= input_buffer[3];
+                decode_out_reg[1] <= input_buffer[5];
+                decode_out_reg[2] <= input_buffer[6];
+                decode_out_reg[3] <= input_buffer[7];
 
                 // set valid output
                 valid_out_reg <= 1'b1;
