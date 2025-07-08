@@ -5,7 +5,7 @@
 SIM ?= icarus
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
-PROJECT_SOURCES = project.v counter_3b.v hamming_decoder.v hamming_encoder.v
+PROJECT_SOURCES = project.v counter_3b.v hamming_decoder.v
 
 ifneq ($(GATES),yes)
 
@@ -31,7 +31,7 @@ endif
 # Allow sharing configuration between design and testbench via `include`:
 COMPILE_ARGS 		+= -I$(SRC_DIR)
 
-# Include the testbench sources:
+# Always include the encoder and testbench
 VERILOG_SOURCES += $(SRC_DIR)/hamming_encoder.v
 VERILOG_SOURCES += $(PWD)/hamming_encoder_tb.v
 TOPLEVEL = tt_um_hamming_encoder_tb
