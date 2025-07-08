@@ -25,8 +25,11 @@ module tt_um_ultrasword_jonz9 (
   wire [2:0] syndrome_out;     // Error syndrome from Hamming decoder
   wire valid_out;              // Valid signal from Hamming decoder
 
-  reg [2:0] oversampling_counter; // Oversampling counter for UART receiver -- count of 8
-  wire hamming_ena;         // Enable signal for Hamming decoder
+  // UART receiver wires
+  wire [6:0] uart_data;        // 7-bit Hamming code from UART
+  wire uart_valid;             // Valid signal from UART
+  
+  wire hamming_ena;            // Enable signal for Hamming decoder
 
   // -------------------------------------------------------------------------- //
   // Connect output signals
@@ -36,39 +39,30 @@ module tt_um_ultrasword_jonz9 (
 
   assign uio_oe[7:0] = 8'b11111111;     // All uio pins configured as outputs
 
-  assign uio_out[7:6] = 2'b0;               // Upper 2 bits set to 0
-  assign uio_out[5:3] = oversampling_counter;  // Middle 3 bits show oversampling counter value
-  assign uio_out[2:0] = counter_out;        // Lower 3 bits show bit counter value
+  assign uio_out[7] = uart_valid;       // Show UART valid signal
+  assign uio_out[6] = hamming_ena;      // Show Hamming enable signal
+  assign uio_out[5:3] = counter_out;    // Show bit position counter
+  assign uio_out[2:0] = syndrome_out;   // Show syndrome bits
 
   // -------------------------------------------------------------------------- //
-  // create objects
-
-  /*
-   * Implementation Notes:
-   * - Currently only implementing the Hamming(7,4) decoder
-   *   - 3 bit clock for oversampling counter
-   * - Future additions could include:
-   *   - statemachine (4 states)
-   *   - simple 2-4 decoder
-   *   - uart receiver (8N1)
-   */
-
-  // Instantiate 3-bit counter for oversampling
-  tt_um_counter_3b counter3b (
+  // Instantiate UART receiver
+  tt_um_uart_receiver uart_rx (
     .clk(clk),
     .rst_n(rst_n),
-    .ena(ena),                     // Enable signal for counter
-    .count(oversampling_counter)   // Connect counter output to counter_out wire
+    .ena(ena),
+    .rx(ui_in[0]),              // UART input on first input bit
+    .data_out(uart_data),       // 7-bit Hamming code output
+    .valid_out(uart_valid)      // Valid signal when full frame received
   );
 
   // Instantiate Hamming decoder
   tt_um_hamming_decoder_74 decoder74 (
     .clk(clk),
     .rst_n(rst_n),
-    .ena(hamming_ena),        // Enable signal for Hamming decoder
-    .decode_in(ui_in[0]),             // Use bit 0 of ui_in as serial input
-    .valid_out(valid_out),            // Connect to valid_out wire
-    .decode_out(decode_out),          // Connect to decode_out wire
+    .ena(hamming_ena),          // Enable when UART has valid data
+    .decode_in(uart_data),      // Connect to UART data output
+    .valid_out(valid_out),      // Connect to valid_out wire
+    .decode_out(decode_out),    // Connect to decode_out wire
     
     // Debug connections
     .debug_syndrome_out(syndrome_out), // Connect syndrome for output display
@@ -78,8 +72,8 @@ module tt_um_ultrasword_jonz9 (
   // -------------------------------------------------------------------------- //
   // logic
 
-  // Enable signal for Hamming decoder -- when oversampling_counter = 7 and ena is enabled
-  assign hamming_ena = (oversampling_counter == 3'b111) && ena;
+  // Enable Hamming decoder when UART has valid data
+  assign hamming_ena = uart_valid && ena;
   
   // -------------------------------------------------------------------------- //
   // List all unused inputs to prevent warnings
