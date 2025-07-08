@@ -2,41 +2,107 @@
 
 module tt_um_uart_receiver (
     input  wire clk,      // clock
-    input  wire rst_n,   // reset_n - low to reset
-    input  wire ena,     // enable signal (active high)
-    input  wire rx,      // UART receive line
-    output reg [7:0] data_out, // Received data output
-    output reg valid_out // Indicates if the received data is valid
+    input  wire rst_n,    // reset_n - low to reset
+    input  wire ena,      // enable signal (active high)
+    input  wire rx,       // UART receive line
+    output reg [6:0] data_out, // Received Hamming(7,4) data output (7 bits)
+    output reg valid_out  // Indicates if the received data is valid
 );
 
+    // -------------------------------------------------------------------------- //
     // State encoding
-    localparam [1:0] IDLE     = 2'b00,
-                     DECODE   = 2'b01,
-                     VALIDATE = 2'b10,
-                     DONE     = 2'b11;
-
-    wire state_ena; // Enable signal for state machine
-
-    reg [1:0] state; // Current state of the receiver
-    reg [3:0] baud_rate; // oversample rate ~ 0-15 ticks
+    localparam [1:0] IDLE  = 2'b00,
+                     START = 2'b01,
+                     DATA  = 2'b10,
+                     STOP  = 2'b11;
 
     // -------------------------------------------------------------------------- //
-    // State counter for UART receiver
-
-    tt_um_counter2b counter2b (
-        .clk(clk),
-        .rst_n(rst_n),
-        .ena(state_ena),
-        .count(state) // Use state as the counter output
-    );
+    // State and control registers
+    reg [1:0] state;          // Current state
+    reg [2:0] bit_counter;    // Counts data bits (0-6 for 7 Hamming bits)
+    reg [2:0] sample_counter; // Oversampling counter
+    reg [6:0] rx_shift_reg;   // Shift register for received Hamming(7,4) data (7 bits)
 
     // -------------------------------------------------------------------------- //
-    // UART receiver logic depending on the state
-    
-    always @(posedge clk or negedge rst_n) begin
+    // Main state machine logic
 
-
+    always @(posedge clk or negedge rst_n) begin    
+        if (!rst_n) begin
+            // Reset logic
+            state <= IDLE;
+            bit_counter <= 3'b000;
+            sample_counter <= 3'b000;
+            rx_shift_reg <= 7'b0000000;
+            data_out <= 7'b0000000;
+            valid_out <= 1'b0;
+        end else if (ena) begin
+            // Default: valid_out is normally low except when explicitly set
+            valid_out <= 1'b0;
+            
+            case (state)
+                // IDLE: Wait for start bit (rx goes HIGH in inverted UART)
+                IDLE: begin
+                    if (rx == 1'b0) begin  // Start bit detected (LOW in inverted UART)
+                        state <= START;
+                        sample_counter <= 3'b000;
+                    end
+                end
+                
+                // START: Sample middle of start bit
+                START: begin
+                    // sample at middle of oversampling period
+                    if (sample_counter == 3'b100) begin
+                        // Verify it's still high at the middle of the bit
+                        if (rx == 1'b1) begin
+                            state <= DATA;
+                            bit_counter <= 3'b000;
+                            sample_counter <= 3'b000;
+                        end else begin
+                            // False start, go back to IDLE
+                            state <= IDLE;
+                        end
+                    end else begin
+                        sample_counter <= sample_counter + 1;
+                    end
+                end
+                
+                // DATA: Receive 7 data bits for Hamming(7,4) code
+                DATA: begin
+                    if (sample_counter == 3'b111) begin
+                        // Sample at middle of bit
+                        rx_shift_reg <= {rx, rx_shift_reg[6:1]}; // LSB first
+                        
+                        if (bit_counter == 3'b110) begin
+                            // All 7 bits received (bit 0 through bit 6)
+                            state <= STOP;
+                            sample_counter <= 3'b000;
+                        end else begin
+                            bit_counter <= bit_counter + 1;
+                            sample_counter <= 3'b000;
+                        end
+                    end else begin
+                        sample_counter <= sample_counter + 1;
+                    end
+                end
+                
+                // STOP: Check for stop bit (should be LOW in inverted UART)
+                STOP: begin
+                    if (sample_counter == 3'b111) begin
+                        if (rx == 1'b0) begin  // Stop bit is LOW in inverted UART
+                            // Valid stop bit detected
+                            data_out <= rx_shift_reg;
+                            valid_out <= 1'b1;
+                        end
+                        // Return to IDLE regardless of stop bit
+                        state <= IDLE;
+                    end else begin
+                        sample_counter <= sample_counter + 1;
+                    end
+                end
+                
+                default: state <= IDLE;
+            endcase
+        end
     end
-
 
 endmodule
