@@ -77,9 +77,6 @@ module tt_um_hamming_decoder_74 (
 
                 // set valid output
                 valid_out_reg <= 1'b1;
-
-                // set counter to 0
-                counter <= 3'b000;
             end else begin
                 // set counter index to be received value
                 input_buffer[counter] <= decode_in;
