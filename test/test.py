@@ -161,3 +161,29 @@ async def test_single_bit_error(dut):
     assert valid_bit == 1, f"Expected valid bit 1, got {valid_bit}"
 
     dut._log.info("Single bit error test PASSED")
+
+
+@cocotb.test()
+async def test_basic_operation(dut):
+    # Start clock and reset
+    clock = Clock(dut.clk, 50, units="us")
+    cocotb.start_soon(clock.start())
+
+    # Reset everything
+    dut.rst_n.value = 0
+    dut.ena.value = 1
+    await ClockCycles(dut.clk, 5)
+    dut.rst_n.value = 1
+
+    # Log initial values to debug
+    dut._log.info(
+        f"Initial: uio_out={dut.uio_out.value:08b}, uo_out={dut.uo_out.value:08b}"
+    )
+
+    # Set some bits and observe
+    for i in range(10):
+        dut.ui_in.value = 1 if i % 2 == 0 else 0
+        await ClockCycles(dut.clk, 1)
+        dut._log.info(
+            f"Cycle {i}: uio_out={dut.uio_out.value:08b}, uo_out={dut.uo_out.value:08b}"
+        )
