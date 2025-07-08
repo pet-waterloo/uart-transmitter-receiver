@@ -32,6 +32,7 @@ endif
 COMPILE_ARGS 		+= -I$(SRC_DIR)
 
 # Include the testbench sources:
+VERILOG_SOURCES += $(SRC_DIR)/hamming_encoder.v
 VERILOG_SOURCES += $(PWD)/hamming_encoder_tb.v
 TOPLEVEL = tt_um_hamming_encoder_tb
 
