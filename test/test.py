@@ -63,6 +63,33 @@ async def perform_test(dut, codeword, test_name):
     return valid_bit, syndrome, data_bits
 
 
+async def send_uart_byte(dut, data_bits):
+    """Send a proper UART frame with start/stop bits and correct timing"""
+    CYCLES_PER_BIT = 8
+
+    # Idle state (HIGH)
+    dut.ui_in.value = 1
+    await ClockCycles(dut.clk, CYCLES_PER_BIT)
+
+    # Start bit (LOW)
+    dut.ui_in.value = 0
+    await ClockCycles(dut.clk, CYCLES_PER_BIT)
+
+    # Data bits (LSB first)
+    for i in range(7):  # 7 bits for Hamming(7,4)
+        bit = (data_bits >> i) & 0x1
+        dut.ui_in.value = bit
+        await ClockCycles(dut.clk, CYCLES_PER_BIT)
+
+    # Stop bit (HIGH)
+    dut.ui_in.value = 1
+    await ClockCycles(dut.clk, CYCLES_PER_BIT)
+
+    # Return to idle (HIGH)
+    dut.ui_in.value = 1
+    await ClockCycles(dut.clk, CYCLES_PER_BIT)
+
+
 @cocotb.test()
 async def test_error_free_data(dut):
     """Test the decoder with error-free Hamming code"""
@@ -84,13 +111,21 @@ async def test_error_free_data(dut):
     # --------------------------------------------------------- #
     # Create a valid Hamming(7,4) codeword - "1111" data bits with appropriate parity
     # Format: [p1 p2 d1 p3 d2 d3 d4] where p=parity, d=data
-    valid_codeword = "0001111"  # LSB first
-    expected_data = 0b1111  # Expected decoded data bits
+    valid_hamming = 0b0001111  # Binary format
+    expected_data = 0b1111     # Expected decoded data bits
 
-    dut._log.info(f"Sending valid codeword: {valid_codeword}")
-    valid_bit, syndrome, data_bits = await perform_test(
-        dut, valid_codeword, "Error-free"
-    )
+    dut._log.info(f"Sending valid codeword: {valid_hamming:07b}")
+    
+    # Send proper UART frame with the Hamming code
+    await send_uart_byte(dut, valid_hamming)
+    
+    # Wait for processing to complete
+    await ClockCycles(dut.clk, 24)
+    
+    # Extract results
+    valid_bit = (dut.uo_out.value >> 7) & 0x1
+    syndrome = (dut.uo_out.value >> 4) & 0x7
+    data_bits = dut.uo_out.value & 0xF
 
     # --------------------------------------------------------- #
     # Verify results
@@ -134,13 +169,21 @@ async def test_single_bit_error(dut):
     # --------------------------------------------------------- #
     # Original codeword with a bit flipped
     # Original: "0001111", Flipped first bit: "1001111"
-    error_input = "1001111"  # Flipped the first bit (p1)
-    expected_data = 0b1111  # Expected corrected data bits
+    error_hamming = 0b1001111  # Flipped the first bit (p1)
+    expected_data = 0b1111     # Expected corrected data bits
 
-    dut._log.info(f"Sending error sequence: {error_input}")
-    valid_bit, syndrome, data_bits = await perform_test(
-        dut, error_input, "Error-correction"
-    )
+    dut._log.info(f"Sending error sequence: {error_hamming:07b}")
+    
+    # Send proper UART frame with the error Hamming code
+    await send_uart_byte(dut, error_hamming)
+    
+    # Wait for processing to complete
+    await ClockCycles(dut.clk, 24)
+    
+    # Extract results
+    valid_bit = (dut.uo_out.value >> 7) & 0x1
+    syndrome = (dut.uo_out.value >> 4) & 0x7
+    data_bits = dut.uo_out.value & 0xF
 
     # --------------------------------------------------------- #
     # Verify results
@@ -165,6 +208,9 @@ async def test_single_bit_error(dut):
 
 @cocotb.test()
 async def test_basic_operation(dut):
+    """Test basic UART receiver operation"""
+    dut._log.info("Starting basic operation test")
+    
     # Start clock and reset
     clock = Clock(dut.clk, 50, units="us")
     cocotb.start_soon(clock.start())
@@ -175,15 +221,24 @@ async def test_basic_operation(dut):
     await ClockCycles(dut.clk, 5)
     dut.rst_n.value = 1
 
-    # Log initial values to debug
-    dut._log.info(
-        f"Initial: uio_out={dut.uio_out.value:08b}, uo_out={dut.uo_out.value:08b}"
-    )
-
-    # Set some bits and observe
-    for i in range(10):
-        dut.ui_in.value = 1 if i % 2 == 0 else 0
-        await ClockCycles(dut.clk, 1)
+    # Send two different frames with different Hamming codes
+    test_codes = [0b0001111, 0b0110101]  # Valid Hamming codes
+    
+    for i, code in enumerate(test_codes):
+        dut._log.info(f"Sending test frame {i+1}: {code:07b}")
+        
+        # Send the UART frame with this code
+        await send_uart_byte(dut, code)
+        
+        # Wait for processing
+        await ClockCycles(dut.clk, 16)
+        
+        # Log the results
+        valid_bit = (dut.uo_out.value >> 7) & 0x1
+        syndrome = (dut.uo_out.value >> 4) & 0x7
+        data_bits = dut.uo_out.value & 0xF
+        
         dut._log.info(
-            f"Cycle {i}: uio_out={dut.uio_out.value:08b}, uo_out={dut.uo_out.value:08b}"
+            f"Frame {i+1} results: Valid={valid_bit}, "
+            f"Syndrome={syndrome:03b}, Data={data_bits:04b}"
         )
