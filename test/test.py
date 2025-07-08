@@ -66,28 +66,54 @@ async def perform_test(dut, codeword, test_name):
 async def send_uart_byte(dut, data_bits):
     """Send a proper UART frame with start/stop bits and correct timing"""
     CYCLES_PER_BIT = 8
+    
+    # Print complete frame information
+    dut._log.info(f"UART TX: Sending complete frame for data: {data_bits:07b}")
 
     # Idle state (HIGH)
     dut.ui_in.value = 1
     await ClockCycles(dut.clk, CYCLES_PER_BIT)
+    dut._log.info(f"UART TX: Idle state complete")
 
     # Start bit (LOW)
     dut.ui_in.value = 0
     await ClockCycles(dut.clk, CYCLES_PER_BIT)
+    dut._log.info(f"UART TX: Start bit sent")
+    
+    # Debug output before sending data bits
+    uart_valid = (dut.uio_out.value >> 7) & 0x1
+    hamming_ena = (dut.uio_out.value >> 6) & 0x1
+    counter = (dut.uio_out.value >> 3) & 0x7
+    dut._log.info(f"UART STATUS: valid={uart_valid}, hamming_ena={hamming_ena}, counter={counter:03b}")
 
     # Data bits (LSB first)
     for i in range(7):  # 7 bits for Hamming(7,4)
         bit = (data_bits >> i) & 0x1
         dut.ui_in.value = bit
+        dut._log.info(f"UART TX: Sending bit {i} = {bit} (data_bits={data_bits:07b})")
         await ClockCycles(dut.clk, CYCLES_PER_BIT)
+        
+        # Debug output after each bit
+        uart_valid = (dut.uio_out.value >> 7) & 0x1
+        counter = (dut.uio_out.value >> 3) & 0x7
+        dut._log.info(f"UART BIT COMPLETE: bit={i}, valid={uart_valid}, counter={counter:03b}")
 
     # Stop bit (HIGH)
     dut.ui_in.value = 1
     await ClockCycles(dut.clk, CYCLES_PER_BIT)
+    dut._log.info(f"UART TX: Stop bit sent")
 
     # Return to idle (HIGH)
     dut.ui_in.value = 1
     await ClockCycles(dut.clk, CYCLES_PER_BIT)
+    dut._log.info(f"UART TX: Frame complete, returned to idle")
+    
+    # Final status
+    uart_valid = (dut.uio_out.value >> 7) & 0x1
+    hamming_ena = (dut.uio_out.value >> 6) & 0x1
+    counter = (dut.uio_out.value >> 3) & 0x7
+    syndrome = (dut.uio_out.value >> 0) & 0x7
+    dut._log.info(f"UART FINAL STATUS: valid={uart_valid}, hamming_ena={hamming_ena}, counter={counter:03b}, syndrome={syndrome:03b}")
 
 
 @cocotb.test()
@@ -99,18 +125,21 @@ async def test_error_free_data(dut):
     clock = Clock(dut.clk, 50, units="us")
     cocotb.start_soon(clock.start())
 
+    # Log initial state
+    dut._log.info(f"Initial state - uo_out: {dut.uo_out.value:08b}, uio_out: {dut.uio_out.value:08b}")
+    
     # Reset
-    dut._log.info("Reset")
+    dut._log.info("Applying reset")
     dut.ena.value = 1
     dut.ui_in.value = 0
     dut.uio_in.value = 0
     dut.rst_n.value = 0
     await ClockCycles(dut.clk, 10)
     dut.rst_n.value = 1
+    dut._log.info("Reset complete - all registers should be cleared")
+    dut._log.info(f"Post-reset state - uo_out: {dut.uo_out.value:08b}, uio_out: {dut.uio_out.value:08b}")
 
     # --------------------------------------------------------- #
-    # Create a valid Hamming(7,4) codeword - "1111" data bits with appropriate parity
-    # Format: [p1 p2 d1 p3 d2 d3 d4] where p=parity, d=data
     valid_hamming = 0b0001111  # Binary format
     expected_data = 0b1111     # Expected decoded data bits
 
@@ -119,14 +148,30 @@ async def test_error_free_data(dut):
     # Send proper UART frame with the Hamming code
     await send_uart_byte(dut, valid_hamming)
     
-    # Wait for processing to complete
-    await ClockCycles(dut.clk, 24)
+    # Wait for processing to complete with monitoring
+    dut._log.info("Waiting for processing to complete with monitoring...")
+    for i in range(24):
+        await ClockCycles(dut.clk, 1)
+        if i % 4 == 0:  # Print every few cycles to reduce log volume
+            uart_valid = (dut.uio_out.value >> 7) & 0x1
+            hamming_ena = (dut.uio_out.value >> 6) & 0x1
+            counter = (dut.uio_out.value >> 3) & 0x7
+            syndrome = (dut.uio_out.value >> 0) & 0x7
+            valid_out = (dut.uo_out.value >> 7) & 0x1
+            decoded_data = dut.uo_out.value & 0xF
+            dut._log.info(f"Cycle {i}: uart_valid={uart_valid}, hamming_ena={hamming_ena}, " + 
+                         f"counter={counter:03b}, syndrome={syndrome:03b}, " +
+                         f"valid_out={valid_out}, decoded_data={decoded_data:04b}")
     
     # Extract results
     valid_bit = (dut.uo_out.value >> 7) & 0x1
     syndrome = (dut.uo_out.value >> 4) & 0x7
     data_bits = dut.uo_out.value & 0xF
 
+    # Detailed debug
+    dut._log.info(f"Raw uo_out value: {dut.uo_out.value:08b}")
+    dut._log.info(f"Raw uio_out value: {dut.uio_out.value:08b}")
+    
     # --------------------------------------------------------- #
     # Verify results
     dut._log.info(
@@ -134,6 +179,15 @@ async def test_error_free_data(dut):
         f"Data={int(data_bits):04b}"
     )
 
+    # More detailed assertions
+    if syndrome != 0:
+        dut._log.error(f"SYNDROME ERROR: Expected 0, got {syndrome:03b}")
+    if data_bits != expected_data:
+        dut._log.error(f"DATA ERROR: Expected {expected_data:04b}, got {data_bits:04b}")
+    if valid_bit != 1:
+        dut._log.error(f"VALID ERROR: Expected 1, got {valid_bit}")
+
+    # Continue with assertions
     # Syndrome should be 0 (no errors)
     assert syndrome == 0, f"Expected syndrome 0, got {syndrome}"
 
