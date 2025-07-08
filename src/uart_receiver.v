@@ -15,12 +15,28 @@ module tt_um_uart_receiver (
                      VALIDATE = 2'b10,
                      DONE     = 2'b11;
 
-    reg [1:0] state; // Current state of the receiver
+    wire state_ena; // Enable signal for state machine
 
+    reg [1:0] state; // Current state of the receiver
     reg [3:0] baud_rate; // oversample rate ~ 0-15 ticks
 
-    // -------------------------------------------- //
-    // State machine for UART receiver
+    // -------------------------------------------------------------------------- //
+    // State counter for UART receiver
+
+    tt_um_counter2b counter2b (
+        .clk(clk),
+        .rst_n(rst_n),
+        .ena(state_ena),
+        .count(state) // Use state as the counter output
+    );
+
+    // -------------------------------------------------------------------------- //
+    // UART receiver logic depending on the state
+    
+    always @(posedge clk or negedge rst_n) begin
+
+
+    end
 
 
 endmodule
