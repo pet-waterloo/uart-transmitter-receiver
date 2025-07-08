@@ -5,7 +5,7 @@
 
 `default_nettype none
 
-module hamming_encoder_7_4 (
+module tt_um_hamming_encoder_7_4 (
     input wire clk,
     input wire rst_n,
     input wire ena,                                     // enable encoding

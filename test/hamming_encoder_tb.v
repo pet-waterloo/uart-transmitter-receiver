@@ -18,7 +18,7 @@ module hamming_encoder_tb ();
   wire valid_out;
   wire [7:0] uio_oe;
 
-  hamming_encoder_7_4 encoder (
+  tt_um_hamming_encoder_7_4 encoder (
       .clk     (clk),
       .rst_n   (rst_n),
       .ena     (ena),
