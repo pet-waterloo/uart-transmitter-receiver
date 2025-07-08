@@ -60,6 +60,8 @@ module tt_um_hamming_decoder_7_4 (
             // Check if we have enough bits to decode
             if (c == 3'b111) begin
                 // decoding logic
+
+
                 // finished
                 valid_out_reg <= 1; // Set valid output
 
