@@ -3,10 +3,10 @@
 
 /* This testbench tests the hamming encoder module separately */
 
-module hamming_encoder_tb ();
+module tt_um_hamming_encoder_tb ();
   initial begin
     $dumpfile("hamming_encoder_test.vcd");
-    $dumpvars(0, hamming_encoder_tb);
+    $dumpvars(0, tt_um_hamming_encoder_tb);
     #1;
   end
 
