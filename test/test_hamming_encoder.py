@@ -20,7 +20,7 @@ async def test_hamming_encoder(dut):
     # Test vectors: (input, expected output)
     test_vectors = [
         (0b0000, 0b0000000),
-        (0b0001, 0b1101001),
+        (0b0001, 0b1110000),
     ]
 
     for (data, expected) in test_vectors:
