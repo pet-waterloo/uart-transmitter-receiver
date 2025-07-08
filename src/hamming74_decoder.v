@@ -87,10 +87,12 @@ module tt_um_hamming_decoder_74 (
 
                 // Set output values
                 valid_out_reg <= 1'b1;
+            else if (counter == 3'b001) begin
+                // Only reset "valid" reg when we are on cycle 1
+                valid_out_reg <= 1'b0;
             end else begin
                 // Shift in new bits
                 input_buffer[counter] <= decode_in;
-                valid_out_reg <= 1'b0;
             end
         end else begin
             valid_out_reg <= 1'b0;

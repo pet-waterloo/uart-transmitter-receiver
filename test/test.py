@@ -41,46 +41,62 @@ async def test_project(dut):
     async def perform_test(codeword):
         # Clock the data into the hamming decoder
         for i, bit in enumerate(codeword):
-            # Set bit 0 of ui_in to the current bit
-            dut.ui_in.value = int(bit)
+            # For each bit in the codeword, we need to wait for a full counter cycle
+            # to ensure the bit is processed when baud_rate_counter == 7
+            for counter_val in range(8):  # 0 through 7
+                # Set bit 0 of ui_in to the current bit
+                dut.ui_in.value = int(bit)
 
-            # Clock once
-            await ClockCycles(dut.clk, 1)
+                # Clock once
+                await ClockCycles(dut.clk, 1)
 
-            # Log the current state
-            _state = str(dut.uo_out.value)
-            valid_bit = _state[7]
-            syndrome_out = _state[4:7]
-            data_bits = _state[0:4]
+                # Get the current counter value
+                baud_counter = (dut.uio_out.value >> 3) & 0x7
 
-            dut._log.info(
-                f"Cycle {i+1}: Sent bit={bit}, Valid={valid_bit}, Syndrome={syndrome_out}, Data={data_bits}, Full output={dut.uo_out.value}, UIO={dut.uio_out.value}"
-            )
+                # Log detailed information when we're at the processing cycle (counter == 7)
+                if baud_counter == 7:
+                    valid_bit = (dut.uo_out.value >> 7) & 0x1
+                    syndrome = (dut.uo_out.value >> 4) & 0x7
+                    data_bits = dut.uo_out.value & 0xF
+
+                    dut._log.info(
+                        f"Bit {i+1}/{len(codeword)} (value={bit}): PROCESSING CYCLE "
+                        f"Valid={valid_bit}, Syndrome={syndrome:03b}, Data={data_bits:04b}, "
+                        f"Full output={dut.uo_out.value:08b}"
+                    )
+                else:
+                    dut._log.info(
+                        f"Bit {i+1}/{len(codeword)} (value={bit}): counter={baud_counter} "
+                        f"(waiting for counter=7)"
+                    )
 
         # Wait a few more cycles to ensure processing completes
-        for i in range(3):
+        for i in range(8):
             await ClockCycles(dut.clk, 1)
-            _state = str(dut.uo_out.value)
-            valid_bit = _state[7]
-            syndrome_out = _state[4:7]
-            data_bits = _state[0:4]
+            baud_counter = (dut.uio_out.value >> 3) & 0x7
 
-            dut._log.info(
-                f"Additional Cycle {i+1}: Valid={valid_bit}, Syndrome={syndrome_out}, Data={data_bits}, Full output={dut.uo_out.value}, UIO={dut.uio_out.value}"
-            )
+            if baud_counter == 7:
+                valid_bit = (dut.uo_out.value >> 7) & 0x1
+                syndrome = (dut.uo_out.value >> 4) & 0x7
+                data_bits = dut.uo_out.value & 0xF
+
+                dut._log.info(
+                    f"Final cycle: PROCESSING CYCLE "
+                    f"Valid={valid_bit}, Syndrome={syndrome:03b}, Data={data_bits:04b}, "
+                    f"Full output={dut.uo_out.value:08b}"
+                )
 
     # ----------------------------------------------------------- #
     # Create a valid Hamming(7,4) codeword - "1111" data bits with appropriate parity
     # Format: [p1 p2 d1 p3 d2 d3 d4] where p=parity, d=data
-    valid_codeword = "0001111"  # LSB first
 
+    valid_codeword = "0001111"  # LSB first
     dut._log.info(f"Sending valid codeword: {valid_codeword}")
 
     await perform_test(valid_codeword)
-
-    # Test with a bit error
     dut._log.info("Testing with error correction")
 
+    # ----------------------------------------------------------- #
     # Reset the system
     dut.rst_n.value = 0
     await ClockCycles(dut.clk, 5)
@@ -107,4 +123,5 @@ async def test_project(dut):
     )
 
     # This should pass if your decoder is working
-    assert True
+    # this will let me see the output results
+    assert False
