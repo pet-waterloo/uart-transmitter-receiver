@@ -10,7 +10,7 @@ module tt_um_hamming_encoder_tb ();
     #1;
   end
 
-  reg clk;VERILOG_SOURCES += $(SRC_DIR)/hamming_encoder.v
+  reg clk;
   reg rst_n;
   reg ena;
   reg [3:0] data_in;
