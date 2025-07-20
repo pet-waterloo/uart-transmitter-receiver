@@ -71,7 +71,7 @@ module tt_um_uart_receiver (
                 
                 // DATA: Receive 7 data bits for Hamming(7,4) code
                 DATA: begin
-                    if (sample_counter == 3'b100) begin
+                    if (sample_counter == 3'b011) begin
                         // Sample at end of bit
                         data_out <= {rx, data_out[6:1]}; // LSB first
                         sample_counter <= sample_counter + 1; // Increment sample counter
@@ -94,9 +94,10 @@ module tt_um_uart_receiver (
                 // STOP: Check for stop bit (should be LOW in inverted UART)
                 STOP: begin
                     if (sample_counter == 3'b111) begin
-                        valid_out <= rx; // Stop bit is HIGH
                         state <= IDLE;
                         sample_counter <= 3'b000;
+                    end else if(sample_counter == 3'b011) begin
+                        valid_out <= rx; // Stop bit is HIGH
                     end else begin
                         sample_counter <= sample_counter + 1;
                     end
