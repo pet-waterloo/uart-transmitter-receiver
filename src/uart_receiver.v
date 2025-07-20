@@ -73,7 +73,7 @@ module tt_um_uart_receiver (
                         // Sample at middle of bit
                         sample_counter <= 3'b000; // Reset counter for next bit
 
-                        if (bit_counter == 3'b110) begin
+                        if (bit_counter == 3'b111) begin
                             // All 7 bits received (bit 0 through bit 6)
                             state <= STOP;
                         end else begin
