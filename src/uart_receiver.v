@@ -47,7 +47,7 @@ module tt_um_uart_receiver (
                 IDLE: begin
                     if (rx == 1'b0) begin  // Start bit detected (LOW in inverted UART)
                         state <= START;
-                        sample_counter <= 3'b000;
+                        sample_counter <= 3'b001;
                     end
                 end
                 
@@ -55,12 +55,12 @@ module tt_um_uart_receiver (
                 START: begin
                     // Oversample start bit, change state only at end
                     // we do -1 counter because IDLE takes a cycle
-                    if (sample_counter == 3'b110) begin
+                    if (sample_counter == 3'b111) begin
                         if (rx == 1'b0) begin       // Start bit is LOW
                             state <= DATA;
                             bit_counter <= 3'b000;
                             sample_counter <= 3'b000;
-                        end else begin
+                        end else begin // Invalid start bit
                             state <= IDLE;
                             sample_counter <= 3'b000;
                         end
@@ -87,7 +87,9 @@ module tt_um_uart_receiver (
                         end else begin
                             bit_counter <= bit_counter + 1;
                         end
-                    end 
+                    end else begin
+                        sample_counter <= sample_counter + 1;
+                    end
                 end
                 
                 // STOP: Check for stop bit (should be LOW in inverted UART)
