@@ -17,15 +17,18 @@ async def send_bits(dut, dut_channel, bits: str, cycles_per_bit: int, callback: 
     dut._log.info(f"Sending bits: {bits} (cycles_per_bit={cycles_per_bit})")
     
     for i, bit in enumerate(bits):
-        # Set bit on specified channel
-        dut._log.info(f"Sending bit #{i} = {bit}")
-        dut_channel.value = int(bit)
 
-        await ClockCycles(dut.clk, cycles_per_bit)
-    
-        if callback:
-            # Call the callback function if provided
-            callback(dut, i, bit, 0)
+        for counter_val in range(cycles_per_bit):
+            # allow for oversampling
+            dut._log.info(f"Sending bit #{i} = {bit} (cycle={counter_val})")
+            dut_channel.value = int(bit)
+
+            # clock system
+            await ClockCycles(dut.clk, 1)
+            
+            if callback:
+                # Call the callback function if provided
+                callback(dut, i, bit, counter_val)
 
 
 async def send_data(dut, dut_channel, _4bits: str, cycles_per_bit: int, callback: None = None):
