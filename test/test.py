@@ -95,8 +95,8 @@ async def send_uart_byte(dut, data_bits):
         
         # Debug output after each bit
         uart_valid = (dut.uio_out.value >> 7) & 0x1
-        counter = (dut.uio_out.value >> 3) & 0x7
-        dut._log.info(f"UART BIT COMPLETE: bit={i}, valid={uart_valid}, counter={counter:03b}")
+        uart_data = (dut.uio_out.value) & 0x7F
+        dut._log.info(f"UART BIT COMPLETE: bit={i}, valid={uart_valid}, data={uart_data:07b}")
 
     # Stop bit (HIGH)
     dut.ui_in.value = 1
@@ -147,7 +147,7 @@ async def test_error_free_data(dut):
     
     # Send proper UART frame with the Hamming code
     await send_uart_byte(dut, valid_hamming)
-    
+
     
     # Wait for processing to complete with monitoring
     dut._log.info("Waiting for processing to complete with monitoring...")
