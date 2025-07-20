@@ -57,7 +57,7 @@ UART_STATE_MAP = {
     3: "STOP"
 }
 
-def idle_callback(dut, i, bit, counter):
+def idle_callback(dut, i, bit, counter, callback = None):
     """
     Callback function for idle state.
     """
@@ -67,7 +67,11 @@ def idle_callback(dut, i, bit, counter):
 
     dut._log.info(f"UART RX: {state_str} state, bit #{i} = {bit} (cycle={counter})")
 
-def start_bit_callback(dut, i, bit, counter):
+    if callback:
+        # Call the callback function if provided
+        callback(dut, i, bit, counter)
+
+def start_bit_callback(dut, i, bit, counter, callback = None):
     """
     Callback function for start bit.
     """
@@ -76,7 +80,11 @@ def start_bit_callback(dut, i, bit, counter):
 
     dut._log.info(f"UART RX: {state_str} state, bit #{i} = {bit} (cycle={counter})")
 
-def data_bit_callback(dut, i, bit, counter):
+    if callback:
+        # Call the callback function if provided
+        callback(dut, i, bit, counter)
+
+def data_bit_callback(dut, i, bit, counter, callback = None):
     """
     Callback function for data bits.
     """
@@ -88,7 +96,11 @@ def data_bit_callback(dut, i, bit, counter):
 
     dut._log.info(f"UART RX: {state_str} state -- bit #{i} = {bit} (cycle={counter}) | rx data = {_data_bits:07b}")
 
-def stop_bit_callback(dut, i, bit, counter):
+    if callback:
+        # Call the callback function if provided
+        callback(dut, i, bit, counter)
+
+def stop_bit_callback(dut, i, bit, counter, callback = None):
     """
     Callback function for stop bit.
     """
@@ -100,6 +112,10 @@ def stop_bit_callback(dut, i, bit, counter):
     state_str = UART_STATE_MAP.get(_state, "UNKNOWN")
 
     dut._log.info(f"UART RX: {state_str} state -- bit #{i} = {bit} (cycle={counter}) | rx data = {_data_bits:07b} | valid = {_valid_bit}")
+
+    if callback:
+        # Call the callback function if provided
+        callback(dut, i, bit, counter)
 
 # ------------------------------------------------------------ #
 # cocotb tests
@@ -115,7 +131,7 @@ async def test_rx_valid_data(dut):
     dut._log.info("Starting test_rx_valid_data")
 
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
-    
+
     # reset
     dut.rst_n.value = 1
     await ClockCycles(dut.clk, 4)
