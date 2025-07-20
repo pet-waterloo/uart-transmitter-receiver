@@ -59,54 +59,6 @@ async def send_stop_bit(dut, dut_channel, cycles_per_bit: int = 8, callback=None
             callback(dut, 0, 1, j, cycles_per_bit)
 
     
-# async def send_uart_byte(dut, data_bits, cycles_per_bit:int =8):
-#     """Send a proper UART frame with start/stop bits and correct timing"""
-    
-#     # Idle state (HIGH)
-#     dut.ui_in.value = 1
-#     await ClockCycles(dut.clk, cycles_per_bit)
-#     dut._log.info(f"UART TX: Idle state complete")
-
-#     # Start bit (LOW)
-#     dut.ui_in.value = 0
-#     await ClockCycles(dut.clk, cycles_per_bit)
-#     dut._log.info(f"UART TX: Start bit sent")
-    
-#     # Debug output before sending data bits
-#     uart_valid = (dut.uio_out.value >> 7) & 0x1
-#     hamming_ena = (dut.uio_out.value >> 6) & 0x1
-#     counter = (dut.uio_out.value >> 3) & 0x7
-#     dut._log.info(f"UART STATUS: valid={uart_valid}, hamming_ena={hamming_ena}, counter={counter:03b}")
-
-#     # Data bits (LSB first)
-#     for i in range(7):  # 7 bits for Hamming(7,4)
-#         bit = (data_bits >> i) & 0x1
-#         dut.ui_in.value = bit
-#         dut._log.info(f"UART TX: Sending bit {i} = {bit} (data_bits={data_bits:07b})")
-#         await ClockCycles(dut.clk, CYCLES_PER_BIT)
-        
-#         # Debug output after each bit
-#         uart_valid = (dut.uio_out.value >> 7) & 0x1
-#         uart_data = (dut.uio_out.value) & 0x7F
-#         dut._log.info(f"UART BIT COMPLETE: bit={i}, valid={uart_valid}, data={uart_data:07b}")
-
-#     # Stop bit (HIGH)
-#     dut.ui_in.value = 1
-#     await ClockCycles(dut.clk, CYCLES_PER_BIT)
-#     dut._log.info(f"UART TX: Stop bit sent")
-
-#     # Return to idle (HIGH)
-#     dut.ui_in.value = 1
-#     await ClockCycles(dut.clk, CYCLES_PER_BIT)
-#     dut._log.info(f"UART TX: Frame complete, returned to idle")
-    
-#     # Final status
-#     uart_valid = (dut.uio_out.value >> 7) & 0x1
-#     hamming_ena = (dut.uio_out.value >> 6) & 0x1
-#     counter = (dut.uio_out.value >> 3) & 0x7
-#     syndrome = (dut.uio_out.value >> 0) & 0x7
-#     dut._log.info(f"UART FINAL STATUS: valid={uart_valid}, hamming_ena={hamming_ena}, counter={counter:03b}, syndrome={syndrome:03b}")
-
 
 async def reset_dut(dut):
     """Reset the DUT to a known state"""
@@ -161,8 +113,12 @@ def callback_data(dut, bit_index, bit_value, cycle_index, total_cycles):
     _uart_valid = (dut.uio_out.value >> 7) & 0x1
 
     dut._log.info(
-        f"DATA CB: CYCLE [{cycle_index+1}/{total_cycles}] | bit_index={bit_index}, bit_value={bit_value}, uart_data={_uart_data:07b}, uart_valid={_uart_valid}"
+        f"DATA CB: CYCLE [{cycle_index+1}/{total_cycles}] | Bit: [{bit_index+1}/7]={bit_value}, uart_data={_uart_data:07b}, uart_valid={_uart_valid}"
     )
+
+    # border off new cycle
+    if cycle_index == total_cycles - 1:
+        dut._log.info("="*30)
 
 def callback_stop(dut, bit_index, bit_value, cycle_index, total_cycles):
     """Callback for stop bit"""
@@ -208,7 +164,7 @@ async def test_error_free_data(dut):
 
     # perform UART cycle
     await send_idle_bits(dut, dut.ui_in, cycles_per_bit, callback=callback_idle)
-    await send_start_bit(dut, dut.ui_in, cycles_per_bit, callback=callback_start)
+    await send_start_bit(dut, dut.ui_in, cycles_per_bit + 1, callback=callback_start)
     await send_data_bits(dut, dut.ui_in, f"{valid_hamming:07b}"[::-1], cycles_per_bit, callback=callback_data)
     await send_stop_bit(dut, dut.ui_in, cycles_per_bit, callback=callback_stop)
 
