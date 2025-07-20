@@ -10,7 +10,7 @@ from cocotb.triggers import ClockCycles
 # utils
 # ------------------------------------------------------------ #
 
-async def send_bits(dut, dut_channel, bits: str, cycles_per_bit: int):
+async def send_bits(dut, dut_channel, bits: str, cycles_per_bit: int, callback: None = None):
     """
     Helper function to send bits to the UART input.
     """
@@ -22,6 +22,10 @@ async def send_bits(dut, dut_channel, bits: str, cycles_per_bit: int):
         dut_channel.value = int(bit)
 
         await ClockCycles(dut.clk, cycles_per_bit)
+    
+        if callback:
+            # Call the callback function if provided
+            callback(dut, i, bit, 0)
 
 
 async def send_data(dut, dut_channel, _4bits: str, cycles_per_bit: int, callback: None = None):
@@ -57,7 +61,7 @@ UART_STATE_MAP = {
     3: "STOP"
 }
 
-def idle_callback(dut, i, bit, counter, callback = None):
+def idle_callback(dut, i, bit, counter):
     """
     Callback function for idle state.
     """
@@ -66,10 +70,6 @@ def idle_callback(dut, i, bit, counter, callback = None):
     state_str = UART_STATE_MAP.get(_state, "UNKNOWN")
 
     dut._log.info(f"UART RX: {state_str} state, bit #{i} = {bit} (cycle={counter})")
-
-    if callback:
-        # Call the callback function if provided
-        callback(dut, i, bit, counter)
 
 def start_bit_callback(dut, i, bit, counter, callback = None):
     """
@@ -80,11 +80,7 @@ def start_bit_callback(dut, i, bit, counter, callback = None):
 
     dut._log.info(f"UART RX: {state_str} state, bit #{i} = {bit} (cycle={counter})")
 
-    if callback:
-        # Call the callback function if provided
-        callback(dut, i, bit, counter)
-
-def data_bit_callback(dut, i, bit, counter, callback = None):
+def data_bit_callback(dut, i, bit, counter):
     """
     Callback function for data bits.
     """
@@ -96,11 +92,7 @@ def data_bit_callback(dut, i, bit, counter, callback = None):
 
     dut._log.info(f"UART RX: {state_str} state -- bit #{i} = {bit} (cycle={counter}) | rx data = {_data_bits:07b}")
 
-    if callback:
-        # Call the callback function if provided
-        callback(dut, i, bit, counter)
-
-def stop_bit_callback(dut, i, bit, counter, callback = None):
+def stop_bit_callback(dut, i, bit, counter):
     """
     Callback function for stop bit.
     """
@@ -112,10 +104,6 @@ def stop_bit_callback(dut, i, bit, counter, callback = None):
     state_str = UART_STATE_MAP.get(_state, "UNKNOWN")
 
     dut._log.info(f"UART RX: {state_str} state -- bit #{i} = {bit} (cycle={counter}) | rx data = {_data_bits:07b} | valid = {_valid_bit}")
-
-    if callback:
-        # Call the callback function if provided
-        callback(dut, i, bit, counter)
 
 # ------------------------------------------------------------ #
 # cocotb tests
