@@ -56,17 +56,13 @@ module tt_um_uart_receiver (
                     // sample at middle of oversampling period
                     if (sample_counter == 3'b100) begin
                         // Verify it's still low at the middle of the bit
-                        // False start, go back to IDLE
                         if (rx == 1'b1) begin
                             state <= IDLE;
                         end
-                    end else if (sample_counter == 3'b111) begin
-                        // finished sample. reset sample counter
-                        sample_counter <= 3'b000;
-
-                        // Move to DATA state
+                    end
+                    if (sample_counter == 3'b111) begin
+                        // finished sample. Move to DATA state
                         state <= DATA;
-
                         bit_counter <= 3'b000;
                         sample_counter <= 3'b000;
                     end else begin
@@ -103,10 +99,10 @@ module tt_um_uart_receiver (
                             // Valid stop bit detected
                             valid_out <= 1'b1;
                         end
-                    end else if (sample_counter == 3'b111) begin
+                    end
+                    if (sample_counter == 3'b111) begin
                         // finished sample. reset sample counter
                         sample_counter <= 3'b000;
-
                         // Return to IDLE regardless of stop bit
                         state <= IDLE;
                     end else begin
