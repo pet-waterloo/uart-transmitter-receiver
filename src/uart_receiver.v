@@ -28,6 +28,7 @@ module tt_um_uart_receiver (
     reg [1:0] state;          // Current state
     reg [2:0] bit_counter;    // Counts data bits (0-6 for 7 Hamming bits)
     reg [2:0] sample_counter; // Oversampling counter
+    reg [6:0] rx_shift_reg;   // Temporary register to collect UART bits
 
     assign state_out = state; // Output current state
 
@@ -38,9 +39,9 @@ module tt_um_uart_receiver (
         if (!rst_n) begin
             // Reset logic
             state <= IDLE;
-
             bit_counter <= 3'b000;
             sample_counter <= 3'b000;
+            rx_shift_reg <= 7'b0000000;
             data_out <= 7'b0000000;
             valid_out <= 1'b0;
         end else if (ena) begin
@@ -66,6 +67,7 @@ module tt_um_uart_receiver (
                         if (rx == 1'b0) begin
                             // valid start bit detected
                             bit_counter <= 3'b000;
+                            rx_shift_reg <= 7'b0000000; // Clear shift reg at start
                         end else if (sample_counter == 3'b111) begin
                             // change state when done sampling
                             state <= DATA;
@@ -82,10 +84,10 @@ module tt_um_uart_receiver (
                 DATA: begin
                     if (sample_counter == 3'b100) begin
                         // Sample at middle of bit
-                        data_out <= {rx, data_out[6:1]}; // LSB first
+                        rx_shift_reg <= {rx, rx_shift_reg[6:1]}; // LSB first
                     end else if (sample_counter == 3'b111) begin
                         // Finished sampling a bit
-                        if (bit_counter == 3'b111) begin
+                        if (bit_counter == 3'b110) begin
                             // All 7 bits received (bit 0 through bit 6)
                             state <= STOP;
                         end else begin
@@ -104,6 +106,7 @@ module tt_um_uart_receiver (
                         if (rx == 1'b1) begin  // Stop bit is HIGH
                             // Valid stop bit detected
                             valid_out <= 1'b1;
+                            data_out <= rx_shift_reg; // Store received frame
                         end
                         // Return to IDLE regardless of stop bit
                         state <= IDLE;
