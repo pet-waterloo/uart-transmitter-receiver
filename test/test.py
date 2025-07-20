@@ -69,7 +69,7 @@ def idle_callback(dut, i, bit, counter):
     Callback function for idle state.
     """
 
-    _state = dut.uo_out.value & 0x07
+    _state = dut.uo_out.value & 0x03
     state_str = UART_STATE_MAP.get(_state, "UNKNOWN")
 
     dut._log.info(f"UART RX: {state_str} state, bit #{i} = {bit} (cycle={counter})")
@@ -78,7 +78,7 @@ def start_bit_callback(dut, i, bit, counter, callback = None):
     """
     Callback function for start bit.
     """
-    _state = dut.uo_out.value & 0x07
+    _state = dut.uo_out.value & 0x03
     state_str = UART_STATE_MAP.get(_state, "UNKNOWN")
 
     dut._log.info(f"UART RX: {state_str} state, bit #{i} = {bit} (cycle={counter})")
@@ -90,7 +90,7 @@ def data_bit_callback(dut, i, bit, counter):
 
     # collect dut info
     _data_bits = dut.uio_out.value & 0x7F
-    _state = dut.uo_out.value & 0x07
+    _state = dut.uo_out.value & 0x03
     state_str = UART_STATE_MAP.get(_state, "UNKNOWN")
 
     dut._log.info(f"UART RX: {state_str} state -- bit #{i} = {bit} (cycle={counter}) | rx data = {_data_bits:07b}")
@@ -103,7 +103,7 @@ def stop_bit_callback(dut, i, bit, counter):
     # collect dut info
     _data_bits = dut.uio_out.value & 0x7F
     _valid_bit = (dut.uo_out.value >> 7) & 0x01
-    _state = dut.uo_out.value & 0x07
+    _state = dut.uo_out.value & 0x03
     state_str = UART_STATE_MAP.get(_state, "UNKNOWN")
 
     dut._log.info(f"UART RX: {state_str} state -- bit #{i} = {bit} (cycle={counter}) | rx data = {_data_bits:07b} | valid = {_valid_bit}")
@@ -155,7 +155,7 @@ async def test_rx_valid_data(dut):
     # collect dut info
     _data_bits = dut.uio_out.value & 0x7F
     _valid_bit = (dut.uo_out.value >> 7) & 0x01
-    _state = dut.uo_out.value & 0x07
+    _state = dut.uo_out.value & 0x03
     state_str = UART_STATE_MAP.get(_state, "UNKNOWN")
 
     dut._log.info("Finished test_rx_valid_data")
