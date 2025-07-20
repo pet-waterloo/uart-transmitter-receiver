@@ -9,7 +9,9 @@ module tt_um_uart_receiver (
 
     // Output signals
     output reg [6:0] data_out, // Received Hamming(7,4) data output (7 bits)
-    output reg [1:0] state_out, // Current state of the receiver
+/* verilator lint_off UNDRIVEN */
+    output reg [1:0] state_out,  // Current state of the receiver
+/* verilator lint_on UNDRIVEN */
     output reg valid_out  // Indicates if the received data is valid
 
 );
