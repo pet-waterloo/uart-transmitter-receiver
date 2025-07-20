@@ -37,12 +37,11 @@ module tt_um_ultrasword_jonz9 (
   assign uo_out[6:4] = syndrome_out;    // Middle 3 bits show syndrome value
   assign uo_out[3:0] = decode_out;      // Lower 4 bits show decoded data
 
+  // DEBUGGING
   assign uio_oe[7:0] = 8'b11111111;     // All uio pins configured as outputs
 
   assign uio_out[7] = uart_valid;       // Show UART valid signal
-  assign uio_out[6] = hamming_ena;      // Show Hamming enable signal
-  assign uio_out[5:3] = counter_out;    // Show bit position counter
-  assign uio_out[2:0] = syndrome_out;   // Show syndrome bits
+  assign uio_out[6:0] = uart_data;      // Show received Hamming code
 
   // -------------------------------------------------------------------------- //
   // Instantiate UART receiver

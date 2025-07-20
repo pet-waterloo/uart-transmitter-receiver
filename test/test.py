@@ -126,7 +126,7 @@ async def test_error_free_data(dut):
     cocotb.start_soon(clock.start())
 
     # Log initial state
-    dut._log.info(f"Initial state - uo_out: {dut.uo_out.value:08b}, uio_out: {dut.uio_out.value:08b}")
+    dut._log.info(f"Initial state - uo_out: {str(dut.uo_out.value)}, uio_out: {str(dut.uio_out.value)}")
     
     # Reset
     dut._log.info("Applying reset")
@@ -137,7 +137,7 @@ async def test_error_free_data(dut):
     await ClockCycles(dut.clk, 10)
     dut.rst_n.value = 1
     dut._log.info("Reset complete - all registers should be cleared")
-    dut._log.info(f"Post-reset state - uo_out: {dut.uo_out.value:08b}, uio_out: {dut.uio_out.value:08b}")
+    dut._log.info(f"Post-reset state - uo_out: {str(dut.uo_out.value)}, uio_out: {str(dut.uio_out.value)}")
 
     # --------------------------------------------------------- #
     valid_hamming = 0b0001111  # Binary format

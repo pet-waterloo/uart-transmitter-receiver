@@ -21,7 +21,6 @@ module tt_um_uart_receiver (
     reg [1:0] state;          // Current state
     reg [2:0] bit_counter;    // Counts data bits (0-6 for 7 Hamming bits)
     reg [2:0] sample_counter; // Oversampling counter
-    reg [6:0] rx_shift_reg;   // Shift register for received Hamming(7,4) data (7 bits)
 
     // -------------------------------------------------------------------------- //
     // Main state machine logic
@@ -32,7 +31,6 @@ module tt_um_uart_receiver (
             state <= IDLE;
             bit_counter <= 3'b000;
             sample_counter <= 3'b000;
-            rx_shift_reg <= 7'b0000000;
             data_out <= 7'b0000000;
             valid_out <= 1'b0;
         end else if (ena) begin
@@ -70,8 +68,8 @@ module tt_um_uart_receiver (
                 DATA: begin
                     if (sample_counter == 3'b111) begin
                         // Sample at middle of bit
-                        rx_shift_reg <= {rx, rx_shift_reg[6:1]}; // LSB first
-                        
+                        data_out <= {rx, data_out[6:1]}; // LSB first
+
                         if (bit_counter == 3'b110) begin
                             // All 7 bits received (bit 0 through bit 6)
                             state <= STOP;
@@ -90,7 +88,6 @@ module tt_um_uart_receiver (
                     if (sample_counter == 3'b111) begin
                         if (rx == 1'b0) begin  // Stop bit is LOW in inverted UART
                             // Valid stop bit detected
-                            data_out <= rx_shift_reg;
                             valid_out <= 1'b1;
                         end
                         // Return to IDLE regardless of stop bit
