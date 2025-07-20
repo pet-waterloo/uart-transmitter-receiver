@@ -5,7 +5,10 @@ module tt_um_uart_receiver (
     input  wire rst_n,    // reset_n - low to reset
     input  wire ena,      // enable signal (active high)
     input  wire rx,       // UART receive line
+
+    // Outputs
     output reg [6:0] data_out, // Received Hamming(7,4) data output (7 bits)
+    output reg [1:0] state_out, // Current state of the receiver
     output reg valid_out  // Indicates if the received data is valid
 );
 
@@ -21,6 +24,8 @@ module tt_um_uart_receiver (
     reg [1:0] state;          // Current state
     reg [2:0] bit_counter;    // Counts data bits (0-6 for 7 Hamming bits)
     reg [2:0] sample_counter; // Oversampling counter
+
+    assign state_out = state; // Output current state for debugging
 
     // -------------------------------------------------------------------------- //
     // Main state machine logic

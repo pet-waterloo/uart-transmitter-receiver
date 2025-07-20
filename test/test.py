@@ -83,37 +83,46 @@ async def reset_dut(dut):
 # callback functions
 # ---------------------------------------------------------------------------- #
 
+UART_STATE_MAP = {
+    0: "IDLE",
+    1: "START",
+    2: "DATA",
+    3: "STOP"}
+
 def callback_idle(dut, bit_index, bit_value, cycle_index, total_cycles):
     """Callback for idle bits"""
     _uart_data = dut.uio_out.value & 0x7F  # Mask to get only the relevant bits
     _uart_valid = (dut.uio_out.value >> 7) & 0x1
+    _state = dut.uo_out.value & 0x3  # Extract UART state (2 bits)
 
     if cycle_index != total_cycles - 1:
         return
 
     dut._log.info(
-        f"IDLE CB: bit_index={bit_index}, bit_value={bit_value}, uart_data={_uart_data:07b}, uart_valid={_uart_valid}"
+        f"IDLE CB: STATE={UART_STATE_MAP.get(_state, 'UNKNOWN')}, bit_index={bit_index}, bit_value={bit_value}, uart_data={_uart_data:07b}, uart_valid={_uart_valid}"
     )
 
 def callback_start(dut, bit_index, bit_value, cycle_index, total_cycles):
     """Callback for start bit"""
     _uart_data = dut.uio_out.value & 0x7F  # Mask to get only the relevant bits
     _uart_valid = (dut.uio_out.value >> 7) & 0x1
+    _state = dut.uo_out.value & 0x3  # Extract UART state (2 bits)
 
     if cycle_index != total_cycles - 1:
         return
 
     dut._log.info(
-        f"START CB: bit_index={bit_index}, bit_value={bit_value}, uart_data={_uart_data:07b}, uart_valid={_uart_valid}"
+        f"START CB: STATE={UART_STATE_MAP.get(_state, 'UNKNOWN')}, bit_index={bit_index}, bit_value={bit_value}, uart_data={_uart_data:07b}, uart_valid={_uart_valid}"
     )
 
 def callback_data(dut, bit_index, bit_value, cycle_index, total_cycles):
     """Callback for data bits"""
     _uart_data = dut.uio_out.value & 0x7F  # Mask to get only the relevant bits
     _uart_valid = (dut.uio_out.value >> 7) & 0x1
+    _state = dut.uo_out.value & 0x3  # Extract UART state (2 bits)
 
     dut._log.info(
-        f"DATA CB: CYCLE [{cycle_index+1}/{total_cycles}] | Bit: [{bit_index+1}/7]={bit_value}, uart_data={_uart_data:07b}, uart_valid={_uart_valid}"
+        f"DATA CB: STATE={UART_STATE_MAP.get(_state, 'UNKNOWN')}, CYCLE [{cycle_index+1}/{total_cycles}] | Bit: [{bit_index+1}/7]={bit_value}, uart_data={_uart_data:07b}, uart_valid={_uart_valid}"
     )
 
     # border off new cycle
@@ -124,12 +133,13 @@ def callback_stop(dut, bit_index, bit_value, cycle_index, total_cycles):
     """Callback for stop bit"""
     _uart_data = dut.uio_out.value & 0x7F  # Mask to get only the relevant bits
     _uart_valid = (dut.uio_out.value >> 7) & 0x1
+    _state = dut.uo_out.value & 0x3  # Extract UART state (2 bits)
 
     if cycle_index != total_cycles - 1:
         return
 
     dut._log.info(
-        f"STOP CB: bit_index={bit_index}, bit_value={bit_value}, uart_data={_uart_data:07b}, uart_valid={_uart_valid}"
+        f"STOP CB: STATE={UART_STATE_MAP.get(_state, 'UNKNOWN')}, bit_index={bit_index}, bit_value={bit_value}, uart_data={_uart_data:07b}, uart_valid={_uart_valid}"
     )
 
 # ---------------------------------------------------------------------------- #
@@ -164,7 +174,7 @@ async def test_error_free_data(dut):
 
     # perform UART cycle
     await send_idle_bits(dut, dut.ui_in, cycles_per_bit, callback=callback_idle)
-    await send_start_bit(dut, dut.ui_in, cycles_per_bit + 1, callback=callback_start)
+    await send_start_bit(dut, dut.ui_in, cycles_per_bit, callback=callback_start)
     await send_data_bits(dut, dut.ui_in, f"{valid_hamming:07b}"[::-1], cycles_per_bit, callback=callback_data)
     await send_stop_bit(dut, dut.ui_in, cycles_per_bit, callback=callback_stop)
 
