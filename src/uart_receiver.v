@@ -27,6 +27,8 @@ module tt_um_uart_receiver (
     reg [2:0] bit_counter;    // Counts data bits (0-6 for 7 Hamming bits)
     reg [2:0] sample_counter; // Oversampling counter
 
+    assign state_out = state; // Output current state
+
     // -------------------------------------------------------------------------- //
     // Main state machine logic
 
@@ -34,6 +36,7 @@ module tt_um_uart_receiver (
         if (!rst_n) begin
             // Reset logic
             state <= IDLE;
+
             bit_counter <= 3'b000;
             sample_counter <= 3'b000;
             data_out <= 7'b0000000;

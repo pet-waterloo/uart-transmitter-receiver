@@ -20,14 +20,14 @@ module tt_um_ultrasword_jonz9 (
 
   // -------------------------------------------------------------------------- //
   // Internal wires
-  wire [2:0] counter_out;      // Output from counter, shows current bit position
+  // wire [2:0] counter_out;      // Output from counter, shows current bit position
   wire [3:0] decode_out;       // Decoded data bits from Hamming decoder
   wire [2:0] syndrome_out;     // Error syndrome from Hamming decoder
   wire valid_out;              // Valid signal from Hamming decoder
 
   // UART receiver wires
   wire [6:0] uart_data;        // 7-bit Hamming code from UART
-  wire [1:0] uart_state;       // Current state of the UART receiver
+  // wire [1:0] uart_state;       // Current state of the UART receiver
   wire uart_valid;             // Valid signal from UART
 
   wire hamming_ena;            // Enable signal for Hamming decoder
@@ -52,7 +52,7 @@ module tt_um_ultrasword_jonz9 (
     .ena(ena),
     .rx(ui_in[0]),             // UART input on first input bit
     .data_out(uart_data),       // 7-bit Hamming code output
-    .state_out(uart_state),     // Current state of UART receiver
+    // .state_out(uart_state),     // Current state of UART receiver
     .valid_out(uart_valid)      // Valid signal when full frame received
   );
 
@@ -67,7 +67,7 @@ module tt_um_ultrasword_jonz9 (
     
     // Debug connections
     .debug_syndrome_out(syndrome_out), // Connect syndrome for output display
-    .debug_counter_out(counter_out)    // Connect counter for debugging
+    // .debug_counter_out(counter_out)    // Connect counter for debugging
   );
 
   // -------------------------------------------------------------------------- //
