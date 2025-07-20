@@ -89,6 +89,7 @@ module tt_um_ultrasword_jonz9 (
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       // Reset logic for internal state
+      uo_out_4b <= 4'b0000; // Reset output to 0
     end else if (ena) begin
       // if not hamming_ena
       if (!hamming_ena) begin

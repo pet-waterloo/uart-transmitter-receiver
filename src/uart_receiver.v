@@ -81,6 +81,7 @@ module tt_um_uart_receiver (
                         if (bit_counter == 3'b110) begin
                             // All 7 bits received (bit 0 through bit 6)
                             state <= STOP;
+                            bit_counter <= 3'b000; // Reset bit counter for next frame
                         end else begin
                             bit_counter <= bit_counter + 1;
                         end
