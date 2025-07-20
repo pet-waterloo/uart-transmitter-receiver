@@ -54,7 +54,8 @@ module tt_um_uart_receiver (
                 // START: Sample middle of start bit
                 START: begin
                     // Oversample start bit, change state only at end
-                    if (sample_counter == 3'b111) begin
+                    // we do -1 counter because IDLE takes a cycle
+                    if (sample_counter == 3'b110) begin
                         if (rx == 1'b1) begin
                             state <= DATA;
                             bit_counter <= 3'b000;
@@ -78,7 +79,8 @@ module tt_um_uart_receiver (
                         // Sample at middle of bit
                         sample_counter <= 3'b000; // Reset counter for next bit
 
-                        if (bit_counter == 3'b111) begin
+                        // check if all bits received
+                        if (bit_counter == 3'b110) begin
                             // All 7 bits received (bit 0 through bit 6)
                             state <= STOP;
                         end else begin
