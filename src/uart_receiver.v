@@ -26,6 +26,9 @@ module tt_um_uart_receiver (
     reg [2:0] bit_counter;    // Counts data bits (0-6 for 7 Hamming bits)
     reg [2:0] sample_counter; // Oversampling counter
 
+
+    assign state_out = state; // Output current state
+
     // -------------------------------------------------------------------------- //
     // Main state machine logic
 
@@ -45,25 +48,20 @@ module tt_um_uart_receiver (
                 // IDLE: (rx HIGH)
                 IDLE: begin
                     if (rx == 1'b0) begin  // Start bit detected (LOW)
-                        // Immediately go to DATA state, no oversampling for START
-                        state <= DATA;
+                        // Go to START state for one cycle
+                        state <= START;
                         bit_counter <= 3'b000;
                         sample_counter <= 3'b000;
                     end
-                    state_out <= IDLE; // Output current state
                 end
                 
                 // START: Sample middle of start bit
                 START: begin
-                    // No oversampling for START, just verify bit
-                    if (rx == 1'b1) begin
-                        state <= IDLE;
-                    end else begin
-                        state <= DATA;
-                        bit_counter <= 3'b000;
-                        sample_counter <= 3'b000;
-                    end
                     state_out <= START; // Output current state
+                    // Only one cycle in START, then go to DATA
+                    state <= DATA;
+                    bit_counter <= 3'b000;
+                    sample_counter <= 3'b000;
                 end
                 
                 // DATA: Receive 7 data bits for Hamming(7,4) code
@@ -97,7 +95,6 @@ module tt_um_uart_receiver (
                     end
                     state <= IDLE;
                     sample_counter <= 3'b000;
-                    state_out <= STOP; // Output current state
                 end
                 
                 default: state <= IDLE;
