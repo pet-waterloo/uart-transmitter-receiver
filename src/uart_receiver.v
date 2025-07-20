@@ -45,7 +45,9 @@ module tt_um_uart_receiver (
                 // IDLE: (rx HIGH)
                 IDLE: begin
                     if (rx == 1'b0) begin  // Start bit detected (LOW)
-                        state <= START;
+                        // Immediately go to DATA state, no oversampling for START
+                        state <= DATA;
+                        bit_counter <= 3'b000;
                         sample_counter <= 3'b000;
                     end
                     state_out <= IDLE; // Output current state
@@ -53,20 +55,13 @@ module tt_um_uart_receiver (
                 
                 // START: Sample middle of start bit
                 START: begin
-                    // sample at middle of oversampling period
-                    if (sample_counter == 3'b100) begin
-                        // Verify it's still low at the middle of the bit
-                        if (rx == 1'b1) begin
-                            state <= IDLE;
-                        end
-                    end
-                    if (sample_counter == 3'b111) begin
-                        // finished sample. Move to DATA state
+                    // No oversampling for START, just verify bit
+                    if (rx == 1'b1) begin
+                        state <= IDLE;
+                    end else begin
                         state <= DATA;
                         bit_counter <= 3'b000;
                         sample_counter <= 3'b000;
-                    end else begin
-                        sample_counter <= sample_counter + 1;
                     end
                     state_out <= START; // Output current state
                 end
@@ -96,20 +91,12 @@ module tt_um_uart_receiver (
                 
                 // STOP: Check for stop bit (should be LOW in inverted UART)
                 STOP: begin
-                    if (sample_counter == 3'b100) begin
-                        if (rx == 1'b1) begin  // Stop bit is HIGH
-                            // Valid stop bit detected
-                            valid_out <= 1'b1;
-                        end
+                    // No oversampling for STOP, just verify bit
+                    if (rx == 1'b1) begin  // Stop bit is HIGH
+                        valid_out <= 1'b1;
                     end
-                    if (sample_counter == 3'b111) begin
-                        // finished sample. reset sample counter
-                        sample_counter <= 3'b000;
-                        // Return to IDLE regardless of stop bit
-                        state <= IDLE;
-                    end else begin
-                        sample_counter <= sample_counter + 1;
-                    end
+                    state <= IDLE;
+                    sample_counter <= 3'b000;
                     state_out <= STOP; // Output current state
                 end
                 

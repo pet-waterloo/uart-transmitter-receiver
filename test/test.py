@@ -138,20 +138,16 @@ async def test_rx_valid_data(dut):
     _cycles_per_bit = 8
 
     # idle state
-    await send_bits(dut, dut.ui_in, "1111", 1, 
-                    callback = idle_callback)
+    await send_bits(dut, dut.ui_in, "1111", 1, callback = idle_callback)
 
-    # start bit
-    await send_bits(dut, dut.ui_in, "0", 8, 
-                    callback = start_bit_callback)
+    # start bit (only 1 cycle)
+    await send_bits(dut, dut.ui_in, "0", 1, callback = start_bit_callback)
 
-    # data bits (send LSB to MSB)
-    await send_bits(dut, dut.ui_in, _target_data[::-1], _cycles_per_bit, 
-                    callback = data_bit_callback)
+    # data bits (send LSB to MSB, 8 cycles per bit)
+    await send_bits(dut, dut.ui_in, _target_data[::-1], _cycles_per_bit, callback = data_bit_callback)
 
-    # stop bit
-    await send_bits(dut, dut.ui_in, "1", 8, 
-                    callback = stop_bit_callback)
+    # stop bit (only 1 cycle)
+    await send_bits(dut, dut.ui_in, "1", 1, callback = stop_bit_callback)
     
     # ------------------------------------------------------------ #
     # check results
