@@ -140,9 +140,8 @@ def callback_idle(dut, bit_index, bit_value, cycle_index, total_cycles):
         return
 
     dut._log.info(
-        f"IDLE CB: bit_index={bit_index}, bit_value={bit_value}, uart_data={_uart_data}, uart_valid={_uart_valid}"
+        f"IDLE CB: bit_index={bit_index}, bit_value={bit_value}, uart_data={_uart_data:07b}, uart_valid={_uart_valid}"
     )
-
 
 def callback_start(dut, bit_index, bit_value, cycle_index, total_cycles):
     """Callback for start bit"""
@@ -153,7 +152,7 @@ def callback_start(dut, bit_index, bit_value, cycle_index, total_cycles):
         return
 
     dut._log.info(
-        f"START CB: bit_index={bit_index}, bit_value={bit_value}, uart_data={_uart_data}, uart_valid={_uart_valid}"
+        f"START CB: bit_index={bit_index}, bit_value={bit_value}, uart_data={_uart_data:07b}, uart_valid={_uart_valid}"
     )
 
 def callback_data(dut, bit_index, bit_value, cycle_index, total_cycles):
@@ -162,7 +161,7 @@ def callback_data(dut, bit_index, bit_value, cycle_index, total_cycles):
     _uart_valid = (dut.uio_out.value >> 7) & 0x1
 
     dut._log.info(
-        f"DATA CB: CYCLE [{cycle_index+1}/{total_cycles}] | bit_index={bit_index}, bit_value={bit_value}, uart_data={_uart_data}, uart_valid={_uart_valid}"
+        f"DATA CB: CYCLE [{cycle_index+1}/{total_cycles}] | bit_index={bit_index}, bit_value={bit_value}, uart_data={_uart_data:07b}, uart_valid={_uart_valid}"
     )
 
 def callback_stop(dut, bit_index, bit_value, cycle_index, total_cycles):
@@ -174,7 +173,7 @@ def callback_stop(dut, bit_index, bit_value, cycle_index, total_cycles):
         return
 
     dut._log.info(
-        f"STOP CB: bit_index={bit_index}, bit_value={bit_value}, uart_data={_uart_data}, uart_valid={_uart_valid}"
+        f"STOP CB: bit_index={bit_index}, bit_value={bit_value}, uart_data={_uart_data:07b}, uart_valid={_uart_valid}"
     )
 
 # ---------------------------------------------------------------------------- #
