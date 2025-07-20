@@ -44,7 +44,18 @@ module tt_um_ultrasword_jonz9 (
   assign uio_out[6:0] = uart_data;      // Show received Hamming code
 
   // -------------------------------------------------------------------------- //
+  // logic
+
+  // Enable Hamming decoder when UART has valid data
+  assign hamming_ena = uart_valid && ena;
+
+  // -------------------------------------------------------------------------- //
+  // List all unused inputs to prevent warnings
+  wire _unused = &{ui_in[7:1], uio_in, 1'b0};
+
+  // -------------------------------------------------------------------------- //
   // Instantiate UART receiver
+
   tt_um_uart_receiver uart_rx (
     .clk(clk),
     .rst_n(rst_n),
@@ -67,15 +78,5 @@ module tt_um_ultrasword_jonz9 (
     .debug_syndrome_out(syndrome_out), // Connect syndrome for output display
     .debug_counter_out(counter_out)    // Connect counter for debugging
   );
-
-  // -------------------------------------------------------------------------- //
-  // logic
-
-  // Enable Hamming decoder when UART has valid data
-  assign hamming_ena = uart_valid && ena;
-  
-  // -------------------------------------------------------------------------- //
-  // List all unused inputs to prevent warnings
-  wire _unused = &{ui_in[7:1], uio_in, 1'b0};
 
 endmodule
