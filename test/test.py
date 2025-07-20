@@ -109,8 +109,13 @@ async def test_uart_rx(dut):
     dut._log.info("Sending stop bit...")
     await uart_send_stop_bit(dut, _num_stop_cycles)
 
-    data_valid, data_output = dut.uio_out.value >> 7, dut.uio_out.value & 0x7F
-    dut._log.info(f"UART Output: {data_output:07b} | UART Valid: {data_valid}")
+    # Wait for valid signal to be asserted
+    for _ in range(16):
+        await ClockCycles(dut.clk, 1)
+        data_valid, data_output = dut.uio_out.value >> 7, dut.uio_out.value & 0x7F
+        dut._log.info(f"UART Output: {data_output:07b} | UART Valid: {data_valid}")
+        if data_valid:
+            break
 
     # -------------------------------------------------------- #
     # check if data is valid
