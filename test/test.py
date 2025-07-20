@@ -12,13 +12,14 @@ from cocotb.triggers import ClockCycles
 async def reset_dut(dut):
     """Reset the DUT by asserting the reset signal."""
     dut.rst.value = 1
-    yield ClockCycles(dut.clk, 10)  # Wait for 10 clock cycles
+    await ClockCycles(dut.clk, 10)  # Wait for 10 clock cycles
     dut.rst.value = 0
 
 
 async def start_dut(dut):
     """Start the DUT by asserting the start signal."""
     dut.ena = 1
+    await ClockCycles(dut.clk, 1)  # Wait for 1 clock cycle
 
 
 async def uart_send_idle_bits(dut, num_idle_bits: int):
