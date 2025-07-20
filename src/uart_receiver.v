@@ -48,16 +48,15 @@ module tt_um_uart_receiver (
                 
                 // START: Sample middle of start bit
                 START: begin
-                    // sample at middle of oversampling period
-                    if (sample_counter == 3'b100) begin
-                        // Verify it's still high at the middle of the bit
+                    // Oversample start bit, change state only at end
+                    if (sample_counter == 3'b111) begin
                         if (rx == 1'b1) begin
                             state <= DATA;
                             bit_counter <= 3'b000;
                             sample_counter <= 3'b000;
                         end else begin
-                            // False start, go back to IDLE
                             state <= IDLE;
+                            sample_counter <= 3'b000;
                         end
                     end else begin
                         sample_counter <= sample_counter + 1;
@@ -67,7 +66,7 @@ module tt_um_uart_receiver (
                 // DATA: Receive 7 data bits for Hamming(7,4) code
                 DATA: begin
                     if (sample_counter == 3'b111) begin
-                        // Sample at middle of bit
+                        // Sample at end of bit
                         data_out <= {rx, data_out[6:1]}; // LSB first
 
                         if (bit_counter == 3'b110) begin
@@ -87,11 +86,10 @@ module tt_um_uart_receiver (
                 STOP: begin
                     if (sample_counter == 3'b111) begin
                         if (rx == 1'b0) begin  // Stop bit is LOW in inverted UART
-                            // Valid stop bit detected
                             valid_out <= 1'b1;
                         end
-                        // Return to IDLE regardless of stop bit
                         state <= IDLE;
+                        sample_counter <= 3'b000;
                     end else begin
                         sample_counter <= sample_counter + 1;
                     end
