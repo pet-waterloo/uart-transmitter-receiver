@@ -56,7 +56,7 @@ module tt_um_uart_receiver (
                     // Oversample start bit, change state only at end
                     // we do -1 counter because IDLE takes a cycle
                     if (sample_counter == 3'b110) begin
-                        if (rx == 1'b1) begin
+                        if (rx == 1'b0) begin       // Start bit is LOW
                             state <= DATA;
                             bit_counter <= 3'b000;
                             sample_counter <= 3'b000;
