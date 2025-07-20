@@ -85,9 +85,9 @@ module tt_um_uart_receiver (
                     if (sample_counter == 3'b100) begin
                         // Sample at middle of bit
                         rx_shift_reg <= {rx, rx_shift_reg[6:1]}; // LSB first
-                        data_out <= {rx, rx_shift_reg[6:1]}; // Update data_out every data bit
                     end else if (sample_counter == 3'b111) begin
                         // Finished sampling a bit
+                        data_out <= rx_shift_reg; // Update data_out at end of bit period
                         if (bit_counter == 3'b110) begin
                             // All 7 bits received (bit 0 through bit 6)
                             state <= STOP;
