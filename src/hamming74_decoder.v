@@ -33,9 +33,9 @@ module tt_um_hamming_decoder_74 (
     // -------------------------------------------------------------------------- //
     // Syndrome calculation (same as before)
     assign syndrome = {
-        input_buffer[6] ^ input_buffer[4] ^ input_buffer[2] ^ input_buffer[0],
-        input_buffer[5] ^ input_buffer[4] ^ input_buffer[1] ^ input_buffer[0],
-        input_buffer[3] ^ input_buffer[2] ^ input_buffer[1] ^ input_buffer[0]
+        input_buffer[0] ^ input_buffer[2] ^ input_buffer[4] ^ input_buffer[6],
+        input_buffer[1] ^ input_buffer[2] ^ input_buffer[5] ^ input_buffer[6],
+        input_buffer[3] ^ input_buffer[4] ^ input_buffer[5] ^ input_buffer[6]
     };
 
     // -------------------------------------------------------------------------- //
