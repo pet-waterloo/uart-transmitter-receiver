@@ -20,8 +20,8 @@ module tt_um_ultrasword_jonz9 (
 
   // -------------------------------------------------------------------------- //
   // Internal wires
-  wire [2:0] counter_out;      // Output from counter, shows current bit position
-  wire [3:0] decode_out;       // Decoded data bits from Hamming decoder
+  // wire [2:0] counter_out;      // Output from counter, shows current bit position (unused)
+  // wire [3:0] decode_out;       // Decoded data bits from Hamming decoder (unused)
   wire [2:0] syndrome_out;     // Error syndrome from Hamming decoder
   wire valid_out;              // Valid signal from Hamming decoder
 
@@ -38,7 +38,7 @@ module tt_um_ultrasword_jonz9 (
   assign uo_out[6:4] = syndrome_out;    // Middle 3 bits show syndrome value
   // assign uo_out[3:0] = decode_out;      // Lower 4 bits show decoded data
   assign uo_out[3] = 1'b0;
-  assign uo_out[2:0] = uart_state;      // Lower 3 bits show UART state
+  assign uo_out[2:0] = {1'b0, uart_state};      // Lower 3 bits show UART state, zero-extended
 
   // DEBUGGING
   assign uio_oe[7:0] = 8'b11111111;     // All uio pins configured as outputs
