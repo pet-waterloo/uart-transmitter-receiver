@@ -114,6 +114,8 @@ async def test_rx_valid_data(dut):
 
     dut._log.info("Starting test_rx_valid_data")
 
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    
     # reset
     dut.rst_n.value = 1
     await ClockCycles(dut.clk, 4)
