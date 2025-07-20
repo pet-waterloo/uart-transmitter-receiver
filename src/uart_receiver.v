@@ -65,17 +65,19 @@ module tt_um_uart_receiver (
                 
                 // DATA: Receive 7 data bits for Hamming(7,4) code
                 DATA: begin
-                    if (sample_counter == 3'b111) begin
+                    if (sample_counter == 3'b100) begin
                         // Sample at end of bit
                         data_out <= {rx, data_out[6:1]}; // LSB first
+                        sample_counter <= sample_counter + 1; // Increment sample counter
+                    end else if (sample_counter == 3'b111) begin
+                        // Sample at middle of bit
+                        sample_counter <= 3'b000; // Reset counter for next bit
 
                         if (bit_counter == 3'b110) begin
                             // All 7 bits received (bit 0 through bit 6)
                             state <= STOP;
-                            sample_counter <= 3'b000;
                         end else begin
                             bit_counter <= bit_counter + 1;
-                            sample_counter <= 3'b000;
                         end
                     end else begin
                         sample_counter <= sample_counter + 1;
