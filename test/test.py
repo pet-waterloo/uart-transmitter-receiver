@@ -148,6 +148,7 @@ async def test_error_free_data(dut):
     # Send proper UART frame with the Hamming code
     await send_uart_byte(dut, valid_hamming)
     
+    
     # Wait for processing to complete with monitoring
     dut._log.info("Waiting for processing to complete with monitoring...")
     for i in range(24):
