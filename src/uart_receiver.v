@@ -90,6 +90,7 @@ module tt_um_uart_receiver (
                         if (bit_counter == 3'b110) begin
                             // All 7 bits received (bit 0 through bit 6)
                             state <= STOP;
+                            data_out <= rx_shift_reg; // Update data_out every frame
                         end else begin
                             bit_counter <= bit_counter + 1;
                         end
