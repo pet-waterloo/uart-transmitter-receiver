@@ -32,14 +32,14 @@ module tt_um_ultrasword_jonz9 (
   
   wire hamming_ena;            // Enable signal for Hamming decoder
 
+  reg [3:0] uo_out_4b;
+
   // -------------------------------------------------------------------------- //
   // Connect output signals
   assign uo_out[7] = valid_out;         // MSB from decoder valid signal
   assign uo_out[6:4] = syndrome_out;    // Middle 3 bits show syndrome value
-  
   // assign uo_out[3:0] = decode_out;      // Lower 4 bits show decoded data
-  assign uo_out[1:0] = uart_state;      // Show UART state (2 bits)
-  assign uo_out[3:2] = 2'b00; // Unused bits, set to 0
+  assign uo_out[3:0] = uo_out_4b; // Lower 4 bits show decoded data
 
   // DEBUGGING
   assign uio_oe[7:0] = 8'b11111111;     // All uio pins configured as outputs
@@ -85,5 +85,22 @@ module tt_um_ultrasword_jonz9 (
     .debug_syndrome_out(syndrome_out), // Connect syndrome for output display
     .debug_counter_out(counter_out)    // Connect counter for debugging
   );
+
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      // Reset logic for internal state
+      counter_out <= 3'b000;
+    end else if (ena) begin
+      // if not hamming_ena
+      if (!hamming_ena) begin
+        // drive state information
+        uo_out_4b[1:0] <= uart_state; // Show UART state (2 bits)
+        uo_out_4b[3:2] <= 2'b00; // Unused bits, set to 0
+      end else begin
+        // drive decode information
+        uo_out_4b[3:0] <= decode_out; // Lower 4 bits show decoded data
+      end
+    end
+  end
 
 endmodule
