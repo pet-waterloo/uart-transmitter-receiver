@@ -90,7 +90,7 @@ async def send_uart_byte(dut, data_bits):
     for i in range(7):  # 7 bits for Hamming(7,4)
         bit = (data_bits >> i) & 0x1
         dut.ui_in.value = bit
-        dut._log.info(f"UART TX: Sending bit {i} = {bit} (data_bits={data_bits:07b})")
+        dut._log.info(f"UART TX: Sending bit #{i} = {bit}")
         await ClockCycles(dut.clk, CYCLES_PER_BIT)
         
         # Debug output after each bit

@@ -38,9 +38,9 @@ module tt_um_uart_receiver (
             valid_out <= 1'b0;
             
             case (state)
-                // IDLE: Wait for start bit (rx goes HIGH in inverted UART)
+                // IDLE: (rx HIGH)
                 IDLE: begin
-                    if (rx == 1'b0) begin  // Start bit detected (LOW in inverted UART)
+                    if (rx == 1'b0) begin  // Start bit detected (LOW)
                         state <= START;
                         sample_counter <= 3'b000;
                     end
@@ -50,15 +50,20 @@ module tt_um_uart_receiver (
                 START: begin
                     // sample at middle of oversampling period
                     if (sample_counter == 3'b100) begin
-                        // Verify it's still high at the middle of the bit
+                        // Verify it's still low at the middle of the bit
+                        // False start, go back to IDLE
                         if (rx == 1'b1) begin
-                            state <= DATA;
-                            bit_counter <= 3'b000;
-                            sample_counter <= 3'b000;
-                        end else begin
-                            // False start, go back to IDLE
                             state <= IDLE;
                         end
+                    end else if (sample_counter == 3'b111) begin
+                        // finished sample. reset sample counter
+                        sample_counter <= 3'b000;
+
+                        // Move to DATA state
+                        state <= DATA;
+
+                        bit_counter <= 3'b000;
+                        sample_counter <= 3'b000;
                     end else begin
                         sample_counter <= sample_counter + 1;
                     end
@@ -66,17 +71,20 @@ module tt_um_uart_receiver (
                 
                 // DATA: Receive 7 data bits for Hamming(7,4) code
                 DATA: begin
-                    if (sample_counter == 3'b111) begin
+                    if (sample_counter == 3'b100) begin
                         // Sample at middle of bit
                         data_out <= {rx, data_out[6:1]}; // LSB first
 
+                        // Increment bit counter
+                        bit_counter <= bit_counter + 1;
+                    end else if (sample_counter == 3'b111) begin
+                        // finished sample. reset sample counter
+                        sample_counter <= 3'b000;
+
+                        // check if finished receiving all bits
                         if (bit_counter == 3'b110) begin
-                            // All 7 bits received (bit 0 through bit 6)
+                            // All 7 bits received, go to STOP state
                             state <= STOP;
-                            sample_counter <= 3'b000;
-                        end else begin
-                            bit_counter <= bit_counter + 1;
-                            sample_counter <= 3'b000;
                         end
                     end else begin
                         sample_counter <= sample_counter + 1;
@@ -85,11 +93,15 @@ module tt_um_uart_receiver (
                 
                 // STOP: Check for stop bit (should be LOW in inverted UART)
                 STOP: begin
-                    if (sample_counter == 3'b111) begin
-                        if (rx == 1'b0) begin  // Stop bit is LOW in inverted UART
+                    if (sample_counter == 3'b100) begin
+                        if (rx == 1'b1) begin  // Stop bit is HIGH
                             // Valid stop bit detected
                             valid_out <= 1'b1;
                         end
+                    end else if (sample_counter == 3'b111) begin
+                        // finished sample. reset sample counter
+                        sample_counter <= 3'b000;
+
                         // Return to IDLE regardless of stop bit
                         state <= IDLE;
                     end else begin
