@@ -25,25 +25,25 @@ async def start_dut(dut):
 async def uart_send_idle_bits(dut, num_idle_bits: int):
     """Send idle bits for UART transmission."""
     for _ in range(num_idle_bits):
-        dut.uart_rx.value = 1  # Idle state is high
+        dut.ui_in.value = 1  # Idle state is high
         await ClockCycles(dut.clk, 1)  # Wait for the duration of the idle bit
 
 
 async def uart_send_start_bit(dut, cycles_per_bit: int):
     """Send the start bit for UART transmission."""
-    dut.uart_rx.value = 0  # Start bit is low
+    dut.ui_in.value = 0  # Start bit is low
     await ClockCycles(dut.clk, cycles_per_bit)  # Wait for the duration of the start bit
 
 
 async def uart_send_data_bit(dut, bit: int, cycles_per_bit: int):
     """Send a data bit for UART transmission."""
-    dut.uart_rx.value = bit
+    dut.ui_in.value = bit
     await ClockCycles(dut.clk, cycles_per_bit)  # Wait for the duration of the data bit
 
 
 async def uart_send_stop_bit(dut, cycles_per_bit: int):
     """Send the stop bit for UART transmission."""
-    dut.uart_rx.value = 1  # Stop bit is high
+    dut.ui_in.value = 1  # Stop bit is high
     await ClockCycles(dut.clk, cycles_per_bit)  # Wait for the duration of the stop bit
 
 
