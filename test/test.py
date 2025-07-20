@@ -83,34 +83,34 @@ async def test_uart_rx(dut):
     data_valid = 0
 
     # send idle bits
-    print("Sending idle bits...")
+    dut._log.info("Sending idle bits...")
     await uart_send_idle_bits(dut, 10)
 
     data_valid, data_output = dut.uio_out.value >> 7, dut.uio_out.value & 0x7F
-    dut._log.info(f"UART Output: {data_output:<10} | UART Valid: {data_valid:<4}")
+    dut._log.info(f"UART Output: {data_output:07b} | UART Valid: {data_valid}")
 
     # send start bit
-    print("Sending start bit...")
+    dut._log.info("Sending start bit...")
     await uart_send_start_bit(dut, _num_start_cycles)
 
     data_valid, data_output = dut.uio_out.value >> 7, dut.uio_out.value & 0x7F
-    dut._log.info(f"UART Output: {data_output:<10} | UART Valid: {data_valid:<4}")
+    dut._log.info(f"UART Output: {data_output:07b} | UART Valid: {data_valid}")
 
     # begin sending data bits
     for i in range(_num_bits):
 
-        print(f"Sending data bit {i}...")
+        dut._log.info(f"Sending data bit {i} | Value: {(_target_data >> i) & 0x1}")
         await uart_send_data_bit(dut, (_target_data >> i) & 0x1, _num_cpb)
 
         data_valid, data_output = dut.uio_out.value >> 7, dut.uio_out.value & 0x7F
-        dut._log.info(f"UART Output: {data_output:<10} | UART Valid: {data_valid:<4}")
+        dut._log.info(f"UART Output: {data_output:07b} | UART Valid: {data_valid}")
     
     # send stop bit
-    print("Sending stop bit...")
+    dut._log.info("Sending stop bit...")
     await uart_send_stop_bit(dut, _num_stop_cycles)
 
     data_valid, data_output = dut.uio_out.value >> 7, dut.uio_out.value & 0x7F
-    dut._log.info(f"UART Output: {data_output:<10} | UART Valid: {data_valid:<4}")
+    dut._log.info(f"UART Output: {data_output:07b} | UART Valid: {data_valid}")
 
     # -------------------------------------------------------- #
     # check if data is valid
