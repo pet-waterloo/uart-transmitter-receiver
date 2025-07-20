@@ -11,9 +11,9 @@ from cocotb.triggers import ClockCycles
 
 async def reset_dut(dut):
     """Reset the DUT by asserting the reset signal."""
-    dut.rst.value = 1
+    dut.rst_n.value = 0
     await ClockCycles(dut.clk, 10)  # Wait for 10 clock cycles
-    dut.rst.value = 0
+    dut.rst_n.value = 1
 
 
 async def start_dut(dut):
