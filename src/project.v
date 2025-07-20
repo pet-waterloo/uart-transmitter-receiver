@@ -71,6 +71,8 @@ module tt_um_ultrasword_jonz9 (
     .rst_n(rst_n),
     .ena(hamming_ena),          // Enable when UART has valid data
     .decode_in(uart_data),      // Connect to UART data output
+
+    // Output connections
     .valid_out(valid_out),      // Connect to valid_out wire
     .decode_out(decode_out),    // Connect to decode_out wire
     

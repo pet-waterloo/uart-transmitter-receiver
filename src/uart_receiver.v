@@ -87,9 +87,7 @@ module tt_um_uart_receiver (
                 // STOP: Check for stop bit (should be LOW in inverted UART)
                 STOP: begin
                     if (sample_counter == 3'b111) begin
-                        if (rx == 1'b0) begin  // Stop bit is LOW in inverted UART
-                            valid_out <= 1'b1;
-                        end
+                        valid_out <= rx; // Stop bit is HIGH
                         state <= IDLE;
                         sample_counter <= 3'b000;
                     end else begin
