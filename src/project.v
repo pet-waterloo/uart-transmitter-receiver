@@ -27,8 +27,9 @@ module tt_um_ultrasword_jonz9 (
 
   // UART receiver wires
   wire [6:0] uart_data;        // 7-bit Hamming code from UART
+  wire [1:0] uart_state;       // Current state of the UART receiver
   wire uart_valid;             // Valid signal from UART
-  
+
   wire hamming_ena;            // Enable signal for Hamming decoder
 
   // -------------------------------------------------------------------------- //
@@ -49,8 +50,9 @@ module tt_um_ultrasword_jonz9 (
     .clk(clk),
     .rst_n(rst_n),
     .ena(ena),
-    .rx(ui_in[0]),              // UART input on first input bit
+    .rx(ui_in[0]),             // UART input on first input bit
     .data_out(uart_data),       // 7-bit Hamming code output
+    .state_out(uart_state),     // Current state of UART receiver
     .valid_out(uart_valid)      // Valid signal when full frame received
   );
 
