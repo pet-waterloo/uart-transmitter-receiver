@@ -5,8 +5,11 @@ module tt_um_counter_3b (
     input  wire clk,      // clock
     input  wire rst_n,   // reset_n - low to reset
     input  wire ena,     // enable signal (active high)
-    output reg [2:0] count // 3-bit counter output
+    output reg [2:0] count, // 3-bit counter output
+    output wire done
 );
+
+    assign done = (count == 3'b111);
 
     // Counter logic
     always @(posedge clk or negedge rst_n) begin
