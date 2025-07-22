@@ -43,7 +43,7 @@ VERILOG_SOURCES += $(PWD)/hamming_encoder_tb.v
 TOPLEVEL = tt_um_ultrasword_jonz9
 
 # MODULE is the basename of the Python test file
-MODULE = test_project
+MODULE = test_transmitter
 
 # include cocotb's make rules to take care of the simulator setup
 include $(shell cocotb-config --makefiles)/Makefile.sim
