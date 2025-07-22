@@ -31,12 +31,43 @@ def uart_frame(data_byte):
 
 async def verify_uart_transmission(dut, data_byte, expected_bits):
     """Helper function to verify UART transmission"""
+    actual_bits = []
+    
     for i, bit in enumerate(expected_bits):
         # Sample in the middle of each bit
         await ClockCycles(dut.clk, BAUD_CYCLES // 2)
         actual = dut.uo_out[0].value.integer
+        actual_bits.append(actual)
         dut._log.info(f"Bit {i}: Expected {bit}, Got {actual}")
-        assert actual == bit, f"Mismatch at bit {i}: expected {bit}, got {actual}"
+        
+        try:
+            assert actual == bit, f"Mismatch at bit {i}: expected {bit}, got {actual}"
+        except AssertionError as e:
+            # If assertion fails, collect all bits before raising the exception
+            await ClockCycles(dut.clk, BAUD_CYCLES // 2)
+            # Continue collecting remaining bits
+            remaining_bits = len(expected_bits) - i - 1
+            for j in range(remaining_bits):
+                await ClockCycles(dut.clk, BAUD_CYCLES)
+                actual_next = dut.uo_out[0].value.integer
+                actual_bits.append(actual_next)
+            
+            # Format comprehensive error message
+            expected_str = ''.join(str(b) for b in expected_bits)
+            actual_str = ''.join(str(b) for b in actual_bits)
+            
+            # Format data and frame details
+            error_msg = f"\nTest failed at bit {i}:\n"
+            error_msg += f"Input data: 0x{data_byte:02X} (binary: {data_byte:08b})\n"
+            error_msg += f"Expected UART frame: {expected_str}\n"
+            error_msg += f"Actual UART frame:   {actual_str}\n"
+            
+            # Add markers to highlight the difference
+            marker = ' ' * (i + len("Actual UART frame:   ")) + "^"
+            error_msg += marker
+            
+            raise AssertionError(error_msg) from e
+            
         await ClockCycles(dut.clk, BAUD_CYCLES // 2)
 
 @cocotb.test()
@@ -59,8 +90,16 @@ async def test_all_zeros(dut):
     expected_hamming = TEST_VECTORS[test_input]
     expected_frame = uart_frame(expected_hamming)
     
+    dut._log.info(f"Testing input: 0x{test_input:X} (binary: {test_input:04b})")
+    dut._log.info(f"Expected Hamming code: 0x{expected_hamming:02X} (binary: {expected_hamming:08b})")
+    dut._log.info(f"Expected UART frame: {''.join(str(b) for b in expected_frame)}")
+    
     # Verify transmission
-    await verify_uart_transmission(dut, expected_hamming, expected_frame)
+    try:
+        await verify_uart_transmission(dut, expected_hamming, expected_frame)
+    except AssertionError as e:
+        dut._log.error(f"Test failed for input 0x{test_input:X} -> Hamming 0x{expected_hamming:02X}")
+        raise
 
 @cocotb.test()
 async def test_all_ones(dut):
@@ -82,8 +121,16 @@ async def test_all_ones(dut):
     expected_hamming = TEST_VECTORS[test_input]
     expected_frame = uart_frame(expected_hamming)
     
+    dut._log.info(f"Testing input: 0x{test_input:X} (binary: {test_input:04b})")
+    dut._log.info(f"Expected Hamming code: 0x{expected_hamming:02X} (binary: {expected_hamming:08b})")
+    dut._log.info(f"Expected UART frame: {''.join(str(b) for b in expected_frame)}")
+    
     # Verify transmission
-    await verify_uart_transmission(dut, expected_hamming, expected_frame)
+    try:
+        await verify_uart_transmission(dut, expected_hamming, expected_frame)
+    except AssertionError as e:
+        dut._log.error(f"Test failed for input 0x{test_input:X} -> Hamming 0x{expected_hamming:02X}")
+        raise
 
 @cocotb.test()
 async def test_alternating_pattern(dut):
@@ -105,8 +152,16 @@ async def test_alternating_pattern(dut):
     expected_hamming = TEST_VECTORS[test_input]
     expected_frame = uart_frame(expected_hamming)
     
+    dut._log.info(f"Testing input: 0x{test_input:X} (binary: {test_input:04b})")
+    dut._log.info(f"Expected Hamming code: 0x{expected_hamming:02X} (binary: {expected_hamming:08b})")
+    dut._log.info(f"Expected UART frame: {''.join(str(b) for b in expected_frame)}")
+    
     # Verify transmission
-    await verify_uart_transmission(dut, expected_hamming, expected_frame)
+    try:
+        await verify_uart_transmission(dut, expected_hamming, expected_frame)
+    except AssertionError as e:
+        dut._log.error(f"Test failed for input 0x{test_input:X} -> Hamming 0x{expected_hamming:02X}")
+        raise
 
 @cocotb.test()
 async def test_single_bit_patterns(dut):
@@ -130,8 +185,16 @@ async def test_single_bit_patterns(dut):
         expected_hamming = TEST_VECTORS[test_input]
         expected_frame = uart_frame(expected_hamming)
         
+        dut._log.info(f"Testing input: 0x{test_input:X} (binary: {test_input:04b})")
+        dut._log.info(f"Expected Hamming code: 0x{expected_hamming:02X} (binary: {expected_hamming:08b})")
+        dut._log.info(f"Expected UART frame: {''.join(str(b) for b in expected_frame)}")
+        
         # Verify transmission
-        await verify_uart_transmission(dut, expected_hamming, expected_frame)
+        try:
+            await verify_uart_transmission(dut, expected_hamming, expected_frame)
+        except AssertionError as e:
+            dut._log.error(f"Test failed for input 0x{test_input:X} -> Hamming 0x{expected_hamming:02X}")
+            raise
         
         # Wait for system to return to idle
         await ClockCycles(dut.clk, BAUD_CYCLES)
@@ -177,10 +240,16 @@ async def test_all_input_patterns(dut):
         expected_hamming = TEST_VECTORS[test_input]
         expected_frame = uart_frame(expected_hamming)
         
-        dut._log.info(f"Testing input 0x{test_input:X} -> Expected Hamming code 0x{expected_hamming:02X}")
+        dut._log.info(f"Testing input: 0x{test_input:X} (binary: {test_input:04b})")
+        dut._log.info(f"Expected Hamming code: 0x{expected_hamming:02X} (binary: {expected_hamming:08b})")
+        dut._log.info(f"Expected UART frame: {''.join(str(b) for b in expected_frame)}")
         
         # Verify transmission
-        await verify_uart_transmission(dut, expected_hamming, expected_frame)
+        try:
+            await verify_uart_transmission(dut, expected_hamming, expected_frame)
+        except AssertionError as e:
+            dut._log.error(f"Test failed for input 0x{test_input:X} -> Hamming 0x{expected_hamming:02X}")
+            raise
         
         # Wait for system to return to idle
         await ClockCycles(dut.clk, BAUD_CYCLES * 2)
@@ -218,15 +287,21 @@ async def test_hamming_code_encoding(dut):
         for _ in range(3):
             await RisingEdge(dut.clk)
         
-        # Verify the bits are correctly set in the hamming_code signal
-        # This test requires access to internal signals which may not be accessible in all test setups
-        
-        dut._log.info(f"Test case: {desc} - Input: {bin(test_input)[2:].zfill(4)}, "
-                    f"Expected Hamming: {bin(expected_hamming)[2:].zfill(8)}")
+        # Detailed information for test case
+        dut._log.info(f"Test case: {desc}")
+        dut._log.info(f"Input: 0x{test_input:X} (binary: {test_input:04b})")
+        dut._log.info(f"Expected Hamming: 0x{expected_hamming:02X} (binary: {expected_hamming:08b})")
         
         # Continue with transmission test to verify encoder works correctly
         expected_frame = uart_frame(expected_hamming)
-        await verify_uart_transmission(dut, expected_hamming, expected_frame)
+        dut._log.info(f"Expected UART frame: {''.join(str(b) for b in expected_frame)}")
+        
+        # Verify transmission
+        try:
+            await verify_uart_transmission(dut, expected_hamming, expected_frame)
+        except AssertionError as e:
+            dut._log.error(f"Test failed for input 0x{test_input:X} ({desc}) -> Hamming 0x{expected_hamming:02X}")
+            raise
         
         # Wait for system to return to idle
         await ClockCycles(dut.clk, BAUD_CYCLES * 2)
