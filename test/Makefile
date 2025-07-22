@@ -5,7 +5,7 @@
 SIM ?= icarus
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
-PROJECT_SOURCES = project.v counter_3b.v hamming_decoder.v
+PROJECT_SOURCES = project.v counter_3b.v hamming_decoder.v hamming_encoder.v uart_transmitter.v
 
 ifneq ($(GATES),yes)
 
@@ -31,13 +31,19 @@ endif
 # Allow sharing configuration between design and testbench via `include`:
 COMPILE_ARGS 		+= -I$(SRC_DIR)
 
-# Always include the encoder and testbench
+# source files
+VERILOG_SOURCES += $(SRC_DIR)/project.v
+VERILOG_SOURCES += $(SRC_DIR)/counter_3b.v
 VERILOG_SOURCES += $(SRC_DIR)/hamming_encoder.v
+VERILOG_SOURCES += $(SRC_DIR)/uart_transmitter.v
+
+# testbench files
 VERILOG_SOURCES += $(PWD)/hamming_encoder_tb.v
-TOPLEVEL = tt_um_hamming_encoder_tb
+
+TOPLEVEL = tt_um_ultrasword_jonz9
 
 # MODULE is the basename of the Python test file
-MODULE = test_hamming_encoder
+MODULE = test_transmitter
 
 # include cocotb's make rules to take care of the simulator setup
 include $(shell cocotb-config --makefiles)/Makefile.sim
