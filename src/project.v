@@ -19,22 +19,22 @@ module tt_um_ultrasword_jonz9 (
 );
 
   // Internal signals
+  wire       tx;
+  wire       tx_busy;
+  wire       hamming_valid;
   wire [3:0] data_in = ui_in[3:0];
   wire [6:0] hamming_code;
-  wire       hamming_valid;
   wire [7:0] padded_data;
-  wire       tx_busy;
   wire [2:0] counter_out;
 
 
   assign padded_data = {1'b0, hamming_code}; // 0 extend MSB to 8 bits
 
   // Output assignments
-  assign uo_out[0] = tx;             // TX line output
-  assign uo_out[3:1] = counter_out;  // Counter output (for debugging)
-  assign uo_out[7:4] = 4'b0000;      // Remaining bits set to 0
+  assign uo_out[0] = tx;               // TX line output
+  assign uio_out[2:0] = counter_out;   // Counter output (for debugging)
+  assign uio_out[7:3] = 4'b00000;      // Remaining bits set to 0
 
-  assign uio_out = 8'b0;
   assign uio_oe  = 8'b0;
 
   // Instantiate Hamming Encoder
