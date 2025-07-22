@@ -33,7 +33,7 @@ module tt_um_ultrasword_jonz9 (
   // Output assignments
   assign uo_out[0] = tx;               // TX line output
   assign uio_out[2:0] = counter_out;   // Counter output (for debugging)
-  assign uio_out[7:3] = 4'b00000;      // Remaining bits set to 0
+  assign uio_out[7:3] = 5'b00000;      // Remaining bits set to 0
 
   assign uio_oe  = 8'b0;
 

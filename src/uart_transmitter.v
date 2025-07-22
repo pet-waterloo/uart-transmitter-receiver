@@ -4,12 +4,11 @@
  * UART Transmitter Module
  * Transmits parallel data serially over UART protocol.
  */
-typedef enum logic [1:0] {
-    IDLE = 2'b00,             
-    LOAD = 2'b01,           
-    SEND = 2'b10,            
-    DONE = 2'b11         
-} state_t;
+// State encoding
+localparam IDLE = 2'b00;
+localparam LOAD = 2'b01;
+localparam SEND = 2'b10;
+localparam DONE = 2'b11;
 
 module uart_transmitter (
     input  wire        clk,
@@ -19,7 +18,7 @@ module uart_transmitter (
     output reg         tx,              // UART serial output
     output wire        tx_busy          // transmitter busy flag
 );
-    state_t state, next_state;
+    reg [1:0] state, next_state;
 
     reg [9:0] shift_reg;                // {stop bit, data[7:0], start bit}
     reg [3:0] bit_count;                // counts bits in frame (0 to 9)
