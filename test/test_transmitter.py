@@ -264,6 +264,7 @@ async def test_hamming_encoder_only(dut):
     dut.rst_n.value = 0
     dut.ui_in.value = 0
     dut.ena.value = 1
+    await ClockCycles(dut.clk, BAUD_CYCLES)
     await ClockCycles(dut.clk, 5)
     dut.rst_n.value = 1
     await ClockCycles(dut.clk, 5)
@@ -307,6 +308,7 @@ async def test_check_shift_register(dut):
     dut.rst_n.value = 0
     dut.ui_in.value = 0
     dut.ena.value = 1
+    await ClockCycles(dut.clk, BAUD_CYCLES)
     await ClockCycles(dut.clk, 5)
     dut.rst_n.value = 1
     await ClockCycles(dut.clk, 5)

@@ -22,12 +22,16 @@ module tt_um_ultrasword_jonz9 (
   wire       tx;
   wire       tx_busy;
   wire       hamming_valid;
+  wire start_transmission = ui_in[4];
+
   wire [3:0] data_in = ui_in[3:0];
   wire [6:0] hamming_code;
   wire [7:0] padded_data;
   wire [2:0] counter_out;
 
-
+  reg start_d;
+  reg hamming_valid_d;
+  wire rising_edge = start_transmission & ~start_d;
   assign padded_data = {1'b0, hamming_code}; // 0 extend MSB to 8 bits
 
   // Output assignments
@@ -37,11 +41,27 @@ module tt_um_ultrasword_jonz9 (
 
   assign uio_oe  = 8'b0;
 
+  always @(posedge clk or negedge rst_n) begin
+      if (!rst_n)
+          start_d <= 1'b0;
+      else
+          start_d <= start_transmission;
+  end
+
+  always @(posedge clk or negedge rst_n) begin
+      if (!rst_n)
+          hamming_valid_d <= 1'b0;
+      else
+          hamming_valid_d <= hamming_valid;
+  end
+
+  wire tx_start = hamming_valid & ~hamming_valid_d;
+
   // Instantiate Hamming Encoder
   tt_um_hamming_encoder_74 encoder (
       .clk(clk),
       .rst_n(rst_n),
-      .ena(ena),
+      .ena(rising_edge),
       .data_in(data_in),
       .code_out(hamming_code),
       .valid_out(hamming_valid)
@@ -51,7 +71,7 @@ module tt_um_ultrasword_jonz9 (
   uart_transmitter transmitter (
       .clk(clk),
       .rst_n(rst_n),
-      .tx_start(hamming_valid),
+      .tx_start(tx_start),
       .tx_data(padded_data),
       .tx(tx),
       .tx_busy(tx_busy)
