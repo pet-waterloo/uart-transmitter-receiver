@@ -17,7 +17,6 @@ module tt_um_ultrasword_jonz9 (
     input  wire       clk,      // clock
     input  wire       rst_n     // reset_n - low to reset
 );
-
   // Internal signals
   wire       tx;
   wire       tx_busy;
@@ -33,6 +32,12 @@ module tt_um_ultrasword_jonz9 (
   reg hamming_valid_d;
   wire rising_edge = start_transmission & ~start_d;
   assign padded_data = {1'b0, hamming_code}; // 0 extend MSB to 8 bits
+  
+  // Debug monitor
+  always @(posedge clk) begin
+    if (tx_start)
+      $display("TX_START pulse generated with data 0x%h", padded_data);
+  end
 
   // Output assignments
   assign uo_out[0] = tx;               // TX line output

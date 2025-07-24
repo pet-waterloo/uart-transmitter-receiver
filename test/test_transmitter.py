@@ -1,6 +1,6 @@
 import cocotb
 from cocotb.clock import Clock
-from cocotb.triggers import ClockCycles, RisingEdge, Timer
+from cocotb.triggers import ClockCycles, RisingEdge, Timer, FallingEdge
 
 BAUD_CYCLES = 8
 
@@ -33,6 +33,28 @@ async def verify_uart_transmission(dut, data_byte, expected_bits):
     """Helper function to verify UART transmission"""
     actual_bits = []
     
+    # First, activate the start signal (ui_in[4])
+    start_bit = dut.ui_in.value.integer & 0xF  # Keep lower 4 bits (data)
+    dut.ui_in.value = start_bit | 0x10  # Set bit 4 (start signal)
+    
+    # Pulse the start signal for 1 clock cycle
+    await ClockCycles(dut.clk, 1)
+    
+    # Clear the start signal
+    dut.ui_in.value = start_bit
+    
+    # Wait for transmission to begin (look for start bit)
+    timeout = 100
+    for i in range(timeout):
+        if dut.uo_out[0].value.integer == 0:  # Start bit is 0
+            dut._log.info(f"Found start bit after {i} cycles")
+            break
+        await ClockCycles(dut.clk, 1)
+    
+    if i == timeout - 1:
+        raise AssertionError("Timeout waiting for transmission to start")
+    
+    # Now collect all bits
     for i, bit in enumerate(expected_bits):
         # Sample in the middle of each bit
         await ClockCycles(dut.clk, BAUD_CYCLES // 2)
@@ -325,6 +347,80 @@ async def test_check_shift_register(dut):
     dut._log.info(f"Input: 0x{test_input:X} (binary: {test_input:04b})")
     dut._log.info(f"Expected Hamming: 0x{expected_hamming:02X} (binary: {expected_hamming:08b})")
     dut._log.info(f"Expected UART frame: {expected_pattern}")
+    
+    # Wait for hamming_valid signal to assert
+    await ClockCycles(dut.clk, 5)
+    
+    # Now check the actual UART transmission bit by bit
+    dut._log.info("Starting UART frame capture:")
+    
+    # Check for start bit first
+    dut._log.info("Waiting for start bit (should be 0)...")
+    for i in range(30):  # Try for several cycles
+        bit_value = dut.uo_out[0].value.integer
+        dut._log.info(f"Cycle {i}: TX = {bit_value}")
+        if bit_value == 0:
+            dut._log.info(f"Start bit detected at cycle {i}")
+            break
+        await ClockCycles(dut.clk, 1)
+    
+    # If we found the start bit, capture the next 8 data bits
+    if bit_value == 0:
+        data_bits = []
+        # Wait half a bit period to sample in the middle
+        await ClockCycles(dut.clk, BAUD_CYCLES // 2)
+        
+        # Capture 8 data bits
+        for i in range(8):
+            await ClockCycles(dut.clk, BAUD_CYCLES)
+            bit_value = dut.uo_out[0].value.integer
+            data_bits.append(bit_value)
+            dut._log.info(f"Data bit {i}: {bit_value}")
+        
+        # Capture stop bit
+        await ClockCycles(dut.clk, BAUD_CYCLES)
+        stop_bit = dut.uo_out[0].value.integer
+        dut._log.info(f"Stop bit: {stop_bit}")
+        
+        # Convert captured bits to byte
+        captured_byte = 0
+        for i, bit in enumerate(data_bits):
+            captured_byte |= (bit << i)
+        
+        dut._log.info(f"Captured byte: 0x{captured_byte:02X} (binary: {captured_byte:08b})")
+        dut._log.info(f"Expected byte: 0x{expected_hamming:02X} (binary: {expected_hamming:08b})")
+@cocotb.test()
+async def test_debug_uart_tx(dut):
+    """Debug test to monitor TX output for a specific input"""
+    clock = Clock(dut.clk, 50, units="ns")
+    cocotb.start_soon(clock.start())
+
+    # Reset
+    dut.rst_n.value = 0
+    dut.ui_in.value = 0
+    dut.ena.value = 1
+    await ClockCycles(dut.clk, BAUD_CYCLES)
+    await ClockCycles(dut.clk, 5)
+    dut.rst_n.value = 1
+    await ClockCycles(dut.clk, 5)
+    
+    # Test input 0x5 (0101) which should produce a distinctive pattern
+    test_input = 0x5
+    dut.ui_in.value = test_input
+    
+    # Expected Hamming code
+    expected_hamming = TEST_VECTORS[test_input]
+    expected_frame = uart_frame(expected_hamming)
+    expected_pattern = ''.join(str(b) for b in expected_frame)
+    
+    dut._log.info(f"Input: 0x{test_input:X} (binary: {test_input:04b})")
+    dut._log.info(f"Expected Hamming: 0x{expected_hamming:02X} (binary: {expected_hamming:08b})")
+    dut._log.info(f"Expected UART frame: {expected_pattern}")
+    
+    # Trigger transmission with start signal
+    dut.ui_in.value = test_input | 0x10  # Set bit 4 (start signal)
+    await ClockCycles(dut.clk, 1)
+    dut.ui_in.value = test_input  # Clear start signal
     
     # Wait for hamming_valid signal to assert
     await ClockCycles(dut.clk, 5)

@@ -25,6 +25,12 @@ module uart_transmitter (
     reg [2:0] clk_count;                // counts 0 to 7 (8 cycles per bit)
 
     assign tx_busy = (state != IDLE);
+    
+    // Debug monitoring
+    always @(posedge clk) begin
+        if (tx_start)
+            $display("UART TX: Start signal received with data 0x%h", tx_data);
+    end
 
     // FSM: State transition
     always @(posedge clk or negedge rst_n) begin
@@ -61,10 +67,13 @@ module uart_transmitter (
 
                 // LOAD state prepares shift_reg with start data stop bits
                 LOAD: begin
-                    shift_reg <= {1'b1, tx_data, 1'b0}; // stop | data | start
+                    // Format: {stop bit, data MSB→LSB, start bit}
+                    shift_reg <= {1'b1, tx_data, 1'b0}; 
                     bit_count <= 0;
                     clk_count <= 0;
                     tx <= 1'b0; // immediately output start bit
+                    // Debug info
+                    $display("UART TX: Loading data 0x%h into shift register", tx_data);
                 end
 
                 // SEND state shifts out the data bits
@@ -77,6 +86,7 @@ module uart_transmitter (
 
                         // Shift register to next bit
                         shift_reg <= {1'b1, shift_reg[9:1]}; // shift right, MSB filled with 1 (idle)
+                        $display("UART TX: Shifting register, bit %d. Tx line = %b, Next bit = %b", bit_count, shift_reg[0], shift_reg[1]);
                     end else begin
                         clk_count <= clk_count + 1;
                     end
