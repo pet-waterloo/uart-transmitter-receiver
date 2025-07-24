@@ -71,6 +71,12 @@ module tt_um_ultrasword_jonz9 (
           tx_start <= 1'b0;
   end
 
+  reg[7:0] tx_data_reg;
+  always @(posedge clk or negedge rst_n) begin
+      if (hamming_vaid)
+          tx_data_reg <= padded_data;
+  end
+
   // Instantiate Hamming Encoder
   tt_um_hamming_encoder_74 encoder (
       .clk(clk),
@@ -86,7 +92,7 @@ module tt_um_ultrasword_jonz9 (
       .clk(clk),
       .rst_n(rst_n),
       .tx_start(tx_start),
-      .tx_data(padded_data),
+      .tx_data(tx_data_reg),
       .tx(tx),
       .tx_busy(tx_busy)
   );
