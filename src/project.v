@@ -60,7 +60,16 @@ module tt_um_ultrasword_jonz9 (
           hamming_valid_d <= hamming_valid;
   end
 
-  wire tx_start = hamming_valid & ~hamming_valid_d;
+  // stretch tx_start signal to ensure it's high for at least one clock cycle
+  reg tx_start;
+  always @(posedge clk or negedge rst_n) begin
+      if (!rst_n)
+          tx_start <= 1'b0;
+      else if (hamming_valid)
+          tx_start <= 1'b1;
+      else if (tx_busy)
+          tx_start <= 1'b0;
+  end
 
   // Instantiate Hamming Encoder
   tt_um_hamming_encoder_74 encoder (
