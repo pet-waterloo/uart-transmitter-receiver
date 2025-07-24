@@ -73,7 +73,7 @@ module tt_um_ultrasword_jonz9 (
 
   reg[7:0] tx_data_reg;
   always @(posedge clk or negedge rst_n) begin
-      if (hamming_vaid)
+      if (hamming_valid)
           tx_data_reg <= padded_data;
   end
 
