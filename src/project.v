@@ -90,7 +90,7 @@ module tt_um_ultrasword_jonz9 (
   );
 
   // Instantiate UART Transmitter
-  uart_transmitter transmitter (
+  tt_um_uart_transmitter transmitter (
     .clk       (clk),
     .rst_n     (rst_n),
     .tx_start  (tx_start_pulse),

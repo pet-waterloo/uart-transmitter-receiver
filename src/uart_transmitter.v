@@ -10,7 +10,7 @@ localparam LOAD = 2'b01;
 localparam SEND = 2'b10;
 localparam DONE = 2'b11;
 
-module uart_transmitter (
+module tt_um_uart_transmitter (
     input  wire        clk,
     input  wire        rst_n,
     input  wire        tx_start,        // start transmission (1-cycle pulse)
