@@ -18,38 +18,39 @@ module tt_um_ultrasword_jonz9 (
     input  wire       rst_n     // Active-low reset
 );
 
-  // Internal signals
+// Internal signals
   wire       tx;
   wire       tx_busy;
   wire       hamming_valid;
   wire       start_transmission = ui_in[4];
-  wire [3:0] data_in = ui_in[3:0];
+  wire [3:0] data_in            = ui_in[3:0];
   wire [6:0] hamming_code;
-  wire [7:0] padded_data_delayed;
   wire [2:0] counter_out;
 
   reg        start_d;
   reg [6:0]  hamming_code_d;
   reg        hamming_valid_d;
+  reg        hamming_valid_q;
   reg [7:0]  tx_data_reg;
-  reg        tx_start;
 
   // Rising edge detector on start_transmission
   wire rising_edge = start_transmission & ~start_d;
+  wire tx_start_pulse = hamming_valid & ~hamming_valid_q;
+  wire [7:0] padded_data_delayed = {1'b0, hamming_code_d};
 
-  // Debug monitor
   always @(posedge clk) begin
-    if (tx_start)
+    if (tx_start_pulse)
       $display("TX_START pulse generated with data 0x%h", tx_data_reg);
   end
 
-  // Assign TX line and debug counter to outputs
-  assign uo_out[0]     = tx;               // UART TX output
-  assign uio_out[2:0]  = counter_out;      // Debug counter
-  assign uio_out[7:3]  = 5'b00000;         // Unused outputs
-  assign uio_oe        = 8'b0;             // All UIO pins are inputs
+  assign uo_out[0]   = tx;             // UART TX output
+  assign uo_out[3:1] = counter_out;    // Counter output (for debugging)
+  assign uo_out[7:4] = 4'b0000;        // Remaining bits set to 0
 
-  // Sample start transmission for edge detection
+  assign uio_out     = 8'b0;           // Not driving any bidir pins
+  assign uio_oe      = 8'b0;           // All bidir pins as inputs
+
+  // Sample start_transmission for rising edge detect
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n)
       start_d <= 1'b0;
@@ -57,35 +58,24 @@ module tt_um_ultrasword_jonz9 (
       start_d <= start_transmission;
   end
 
-  // Register delayed Hamming output and valid flag
+  // Register delayed Hamming output/valid, track previous valid for pulse
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      hamming_code_d  <= 7'b0;
-      hamming_valid_d <= 1'b0;
+      hamming_code_d   <= 7'b0;
+      hamming_valid_d  <= 1'b0;
+      hamming_valid_q  <= 1'b0;
     end else begin
-      hamming_code_d  <= hamming_code;
-      hamming_valid_d <= hamming_valid;
+      hamming_code_d   <= hamming_code;
+      hamming_valid_d  <= hamming_valid;
+      hamming_valid_q  <= hamming_valid;
     end
   end
 
-  // Build 8-bit padded Hamming output from delayed code
-  assign padded_data_delayed = {1'b0, hamming_code_d};
-
-  // Stretch tx_start signal to ensure a full clock-wide pulse
-  always @(posedge clk or negedge rst_n) begin
-    if (!rst_n)
-      tx_start <= 1'b0;
-    else if (hamming_valid_d)
-      tx_start <= 1'b1;
-    else if (tx_busy)
-      tx_start <= 1'b0;
-  end
-
-  // Capture transmit data aligned with valid Hamming output
+  // Capture transmit data on tx_start pulse
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n)
       tx_data_reg <= 8'b0;
-    else if (hamming_valid_d)
+    else if (tx_start_pulse)
       tx_data_reg <= padded_data_delayed;
   end
 
@@ -103,13 +93,13 @@ module tt_um_ultrasword_jonz9 (
   uart_transmitter transmitter (
     .clk       (clk),
     .rst_n     (rst_n),
-    .tx_start  (tx_start),
+    .tx_start  (tx_start_pulse),
     .tx_data   (tx_data_reg),
     .tx        (tx),
     .tx_busy   (tx_busy)
   );
 
-  // Instantiate 3-bit Debug Counter
+  // Instantiate 3-bit Counter
   tt_um_counter_3b counter (
     .clk   (clk),
     .rst_n (rst_n),
