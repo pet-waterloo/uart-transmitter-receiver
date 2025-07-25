@@ -31,12 +31,6 @@ endif
 # Allow sharing configuration between design and testbench via `include`:
 COMPILE_ARGS 		+= -I$(SRC_DIR)
 
-# source files
-# VERILOG_SOURCES += $(SRC_DIR)/project.v
-# VERILOG_SOURCES += $(SRC_DIR)/counter_3b.v
-# VERILOG_SOURCES += $(SRC_DIR)/hamming_encoder.v
-# VERILOG_SOURCES += $(SRC_DIR)/uart_transmitter.v
-
 TOPLEVEL = tt_um_ultrasword_jonz9
 
 # MODULE is the basename of the Python test file
