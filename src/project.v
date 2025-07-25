@@ -86,8 +86,7 @@ module tt_um_ultrasword_jonz9 (
     .ena       (rising_edge),
     .data_in   (data_in),
     .code_out  (hamming_code),
-    .valid_out (hamming_valid),
-    .done      ()
+    .valid_out (hamming_valid)
   );
 
   // Instantiate UART Transmitter
@@ -97,8 +96,7 @@ module tt_um_ultrasword_jonz9 (
     .tx_start  (tx_start_pulse),
     .tx_data   (tx_data_reg),
     .tx        (tx),
-    .tx_busy   (tx_busy),
-    .done      ()
+    .tx_busy   (tx_busy)
   );
 
   // Instantiate 3-bit Counter
