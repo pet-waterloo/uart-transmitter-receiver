@@ -5,7 +5,7 @@
 SIM ?= icarus
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
-PROJECT_SOURCES = project.v counter_3b.v hamming_decoder.v hamming_encoder.v uart_transmitter.v
+PROJECT_SOURCES = $(shell ls -p $(SRC_DIR) | grep -v / | grep "\.v$$")
 
 ifneq ($(GATES),yes)
 
