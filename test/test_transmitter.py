@@ -30,8 +30,8 @@ ONE_BIT_ERROR_MASK = "0000100"
 TWO_BIT_ERROR_MASK = "0100010"
 
 # encoder output signals
-ENCODER_CODE_SIGNAL = "hamming_code_d"
-ENCODER_VALID_SIGNAL = "hamming_valid_d"
+ENCODER_CODE_SIGNAL = "hamming_code"
+ENCODER_VALID_SIGNAL = "hamming_valid"
 
 def int_to_binstr(value: int, width: int) -> str:
     return format(value, f"0{width}b")
