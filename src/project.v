@@ -45,7 +45,8 @@ module tt_um_ultrasword_jonz9 (
 
   assign uo_out[0]   = tx;             // UART TX output
   assign uo_out[3:1] = counter_out;    // Counter output (for debugging)
-  assign uo_out[7:4] = 4'b0000;        // Remaining bits set to 0
+  assign uo_out[4]   = tx_busy;        // Transmitter busy flag
+  assign uo_out[7:5] = 3'b000;        // Remaining bits set to 0
 
   assign uio_out     = 8'b0;           // Not driving any bidir pins
   assign uio_oe      = 8'b0;           // All bidir pins as inputs
