@@ -75,8 +75,8 @@ async def run_hamming_case(dut, data_bits_str, error_mask_str, output_sig, busy_
         await ClockCycles(dut.clk, BAUD_CYCLES)
     
     expected_code = HAMMING_CODE_TABLE[data_bits_str]
-    masked_code = "".join(["1" if a == "1" and b == "1" else "0" 
-                          for a, b in zip(expected_code, error_mask_str)])
+    masked_code = "".join(["1" if int(a) ^ int(b) == 1 else "0" 
+                      for a, b in zip(expected_code, error_mask_str)])
                           
     return expected_code, masked_code
 
