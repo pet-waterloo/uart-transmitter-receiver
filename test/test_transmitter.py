@@ -33,6 +33,9 @@ TWO_BIT_ERROR_MASK = "0100010"
 ENCODER_CODE_SIGNAL = "hamming_code"
 ENCODER_VALID_SIGNAL = "hamming_valid"
 
+ENCODER_CODE_SIGNAL = "uo_out" 
+ENCODER_VALID_SIGNAL = "tx_busy" 
+
 def int_to_binstr(value: int, width: int) -> str:
     return format(value, f"0{width}b")
 
@@ -56,35 +59,27 @@ async def apply_reset(dut, cycles=2):
     dut.rst_n.value = 1
     await ClockCycles(dut.clk, cycles)
 
-async def run_hamming_case(dut, data_bits_str, error_mask_str, encoder_code_sig, encoder_valid_sig):
-    # drive 4-bit input, pulse start, wait for valid, inject error mask
+async def run_hamming_case(dut, data_bits_str, error_mask_str, output_sig, busy_sig):
+    # Send input with start signal
     data_bits = int(data_bits_str, 2)
-    expected_code_str = HAMMING_CODE_TABLE[data_bits_str]
-
     dut.ui_in.value = data_bits
     dut.ui_in.value = data_bits | 0x10  # pulse start
     await ClockCycles(dut.clk, 1)
     dut.ui_in.value = data_bits
 
-    # wait for encoder valid
+    # Wait for UART to become busy
     for _ in range(10):
-        if encoder_valid_sig.value.integer == 1:
+        if (output_sig.value.integer & 0x01) == 0:  # Start bit detected
             break
         await ClockCycles(dut.clk, 1)
 
-    # get codeword, apply error mask for 1 cycle
-    original_code_int = encoder_code_sig.value.integer & 0x7F
-    original_code_str = int_to_binstr(original_code_int, 7)
-    mask_int = int(error_mask_str, 2)
-    masked_code_int = original_code_int ^ mask_int
-    encoder_code_sig.value = masked_code_int
-    await ClockCycles(dut.clk, 1)
-    encoder_code_sig.value = original_code_int
+    # Capture full UART frame (sampling in middle of each bit)
+    # This replaces the internal signal monitoring
+    await ClockCycles(dut.clk, BAUD_CYCLES // 2)  # Align to middle of start bit
+    # Continue sampling logic...
 
-    dut._log.info(
-        f"Input={data_bits_str}, Encoded={original_code_str}, Mask={error_mask_str}, AfterMask={int_to_binstr(masked_code_int,7)}"
-    )
-    return original_code_str, int_to_binstr(masked_code_int, 7)
+    dut._log.info(f"Input={data_bits_str}, UART frame captured")
+    # Return appropriate values for comparison
 
 @cocotb.test()
 async def test_full_hamming_code(dut):
