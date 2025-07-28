@@ -18,8 +18,12 @@ project:
   # Don't forget to also update `PROJECT_SOURCES` in test/Makefile.
   source_files:
     - "project.v"
+    - "counter_2b.v"
     - "counter_3b.v"
-    - "hamming_decoder.v"
+    - "counter_8b.v"
+    - "hamming74_decoder.v"
+    - "statemachine_4.v"
+    - "uart_receiver.v"
 
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
 # This section is for the datasheet/website. Use descriptive names (e.g., RX, TX, MOSI, SCL, SEG_A, etc.).
@@ -45,9 +49,9 @@ pinout:
   uo[7]: "out7"
 
   # Bidirectional pins
-  uio[0]: ""
-  uio[1]: ""
-  uio[2]: ""
+  uio[0]: "o1"
+  uio[1]: "o2"
+  uio[2]: "o3"
   uio[3]: ""
   uio[4]: ""
   uio[5]: ""
