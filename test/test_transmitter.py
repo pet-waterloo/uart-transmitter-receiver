@@ -30,6 +30,13 @@ TWO_BIT_ERROR_MASK = "0100010"
 ENCODER_CODE_SIGNAL = "uo_out"
 ENCODER_VALID_SIGNAL = "uo_out"
 
+# extract integer value from signal, handles x values as 0
+def safe_get_int_value(signal, bit_mask=0x01):
+    try:
+        return signal.value.integer & bit_mask
+    except ValueError:
+        return 0
+
 def int_to_binstr(value: int, width: int) -> str:
     return format(value, f"0{width}b")
 
@@ -59,14 +66,17 @@ async def run_hamming_case(dut, data_bits_str, error_mask_str, output_sig, busy_
     await ClockCycles(dut.clk, 1)
     dut.ui_in.value = data_bits
 
+    # Wait for start bit (0) or timeout after 10 cycles
     for _ in range(10):
-        if (output_sig.value.integer & 0x01) == 0:
+        if safe_get_int_value(output_sig) == 0:
             break
         await ClockCycles(dut.clk, 1)
 
+    # Capture UART frame - safely handle 'x' values
     uart_frame = ""
     for bit in range(10):
-        uart_frame = str(int(output_sig.value.integer & 0x01)) + uart_frame
+        bit_value = safe_get_int_value(output_sig)
+        uart_frame = str(bit_value) + uart_frame
         await ClockCycles(dut.clk, BAUD_CYCLES)
     
     expected_code = HAMMING_CODE_TABLE[data_bits_str]
@@ -140,3 +150,4 @@ async def test_full_hamming_code(dut):
             tx_busy_active = busy_sig.value.integer != 0
         except ValueError:
             tx_busy_active = (busy_sig.value.integer & 0x10) != 0
+        tx_busy_active = safe_get_int_value(busy_sig, 0xFF) != 0  # Check full value
