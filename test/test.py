@@ -8,23 +8,25 @@ from cocotb.triggers import ClockCycles, RisingEdge
 
 BAUD_CYCLES = 8  # UART oversampling factor
 
+# inputs : [d0, d1, d2, d3]
+# outputs: [c0, c1, d0, c2, d1, d2, d3]
 HAMMING_CODE_TABLE = {
     "0000": "0000000",
-    "0001": "1110001",
-    "0010": "1100010",
-    "0011": "0010011",
-    "0100": "1010100",
+    "0001": "1101001",
+    "0010": "0101010",
+    "0011": "1000011",
+    "0100": "1001100",
     "0101": "0100101",
-    "0110": "0110110",
-    "0111": "1000111",
-    "1000": "0111000",
-    "1001": "1001001",
+    "0110": "1100110",
+    "0111": "0001111",
+    "1000": "1110000",
+    "1001": "0011001",
     "1010": "1011010",
-    "1011": "0101011",
-    "1100": "0011100",
-    "1101": "1101101",
-    "1110": "1111110",
-    "1111": "0001111",
+    "1011": "0110011",
+    "1100": "0111100",
+    "1101": "1010101",
+    "1110": "0010110",
+    "1111": "1111111"
 }
 
 NO_ERROR_MASK      = "0000000"
@@ -247,10 +249,11 @@ async def test_error_free_data(dut):
     clock = Clock(dut.clk, 50, units="us")
     cocotb.start_soon(clock.start())
     await reset_dut(dut)
-    valid_hamming = 0b1111111
+    valid_hamming = 0b1111111  # Valid Hamming code for data 0b1111
     expected_data = 0b1111
     cycles_per_bit = 8
     dut._log.info(f"Sending valid codeword: {valid_hamming:07b}")
+
     # Send UART frame: idle, start, data, stop, idle
     await send_idle_bits(dut, dut.ui_in, cycles_per_bit, callback=callback_idle)
     await send_start_bit(dut, dut.ui_in, cycles_per_bit, callback=callback_start)
@@ -258,10 +261,12 @@ async def test_error_free_data(dut):
     await send_stop_bit(dut, dut.ui_in, cycles_per_bit, callback=callback_stop)
     await send_idle_bits(dut, dut.ui_in, cycles_per_bit, callback=callback_idle)
     dut._log.info("UART frame sent, waiting for processing...")
+
     # Output UART results
     _uart_data = dut.uio_out.value & 0x7F
     _uart_valid = (dut.uio_out.value >> 7) & 0x1
     dut._log.info(f"UART OUTPUT: uart_data={_uart_data:07b}, uart_valid={_uart_valid}")
+
     # Wait for decoder to process
     for i in range(cycles_per_bit):
         await ClockCycles(dut.clk, 1)
@@ -270,6 +275,7 @@ async def test_error_free_data(dut):
             syndrome_out = (dut.uo_out.value >> 4) & 0x7
             valid_out = (dut.uo_out.value >> 7) & 0x1
             dut._log.info(f"Cycle {i+1}: decode_out={decode_out:04b}, syndrome_out={syndrome_out:03b}, valid_out={valid_out}")
+
     # Extract and check final results
     decode_out = dut.uo_out.value & 0xF
     syndrome_out = (dut.uo_out.value >> 4) & 0x7
@@ -277,6 +283,7 @@ async def test_error_free_data(dut):
     dut._log.info(f"Hamming Decoder output: decode_out={decode_out:04b}, syndrome_out={syndrome_out:03b}, valid_out={valid_out}")
     dut._log.info("Verifying results...")
     dut._log.info(f"Final result: Valid={int(valid_out)}, Syndrome={int(syndrome_out):03b}, Data={int(decode_out):04b}")
+
     # Assertions
     if syndrome_out != 0:
         dut._log.error(f"SYNDROME ERROR: Expected 0, got {syndrome_out:03b}")
@@ -300,6 +307,7 @@ async def test_single_bit_error(dut):
     expected_data = 0b1111
     cycles_per_bit = 8
     dut._log.info(f"Sending invalid codeword: {invalid_hamming:07b}")
+
     # Send UART frame: idle, start, data, stop, idle
     await send_idle_bits(dut, dut.ui_in, cycles_per_bit, callback=callback_idle)
     await send_start_bit(dut, dut.ui_in, cycles_per_bit, callback=callback_start)
@@ -307,10 +315,12 @@ async def test_single_bit_error(dut):
     await send_stop_bit(dut, dut.ui_in, cycles_per_bit, callback=callback_stop)
     await send_idle_bits(dut, dut.ui_in, cycles_per_bit, callback=callback_idle)
     dut._log.info("UART frame sent, waiting for processing...")
+
     # Output UART results
     _uart_data = dut.uio_out.value & 0x7F
     _uart_valid = (dut.uio_out.value >> 7) & 0x1
     dut._log.info(f"UART OUTPUT: uart_data={_uart_data:07b}, uart_valid={_uart_valid}")
+
     # Wait for decoder to process
     for i in range(cycles_per_bit):
         await ClockCycles(dut.clk, 1)
@@ -319,6 +329,7 @@ async def test_single_bit_error(dut):
             syndrome_out = (dut.uo_out.value >> 4) & 0x7
             valid_out = (dut.uo_out.value >> 7) & 0x1
             dut._log.info(f"Cycle {i+1}: decode_out={decode_out:04b}, syndrome_out={syndrome_out:03b}, valid_out={valid_out}")
+
     # Extract and check final results
     decode_out = dut.uo_out.value & 0xF
     syndrome_out = (dut.uo_out.value >> 4) & 0x7
@@ -326,6 +337,7 @@ async def test_single_bit_error(dut):
     dut._log.info(f"Hamming Decoder output: decode_out={decode_out:04b}, syndrome_out={syndrome_out:03b}, valid_out={valid_out}")
     dut._log.info("Verifying results...")
     dut._log.info(f"Final result: Valid={int(valid_out)}, Syndrome={int(syndrome_out):03b}, Data={int(decode_out):04b}")
+    
     # Assertions
     if syndrome_out == 0:
         dut._log.error(f"SYNDROME ERROR: Expected non-zero (error detected), got {syndrome_out:03b}")
