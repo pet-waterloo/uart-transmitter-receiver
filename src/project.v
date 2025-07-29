@@ -48,7 +48,6 @@ module tt_um_ultrasword_jonz9 (
   reg [7:0]  tx_data_reg;
 
   // -------------------------------------------------------------------------- //
-  // Connect output signals - CAREFULLY MAPPED TO AVOID CONFLICTS
   // Primary outputs
   assign uo_out[0] = tx;                 // TX pin - needed by transmitter test
   assign uo_out[4] = tx_busy;            // TX busy - needed by transmitter test
