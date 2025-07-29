@@ -198,7 +198,7 @@ async def test_error_free_data(dut):
         await ClockCycles(dut.clk, 1)
         if (i+1) % 4 == 0:  # Print every few cycles to reduce log volume
             decode_out = dut.uo_out.value & 0xF
-            syndrome_out = (dut.uo_out.value >> 4) & 0x7
+            syndrome_out = (dut.uio_out.value >> 4) & 0x7
             valid_out = (dut.uo_out.value >> 7) & 0x1
 
             dut._log.info(
@@ -300,7 +300,7 @@ async def test_single_bit_error(dut):
         await ClockCycles(dut.clk, 1)
         if (i+1) % 4 == 0:  # Print every few cycles to reduce log volume
             decode_out = dut.uo_out.value & 0xF
-            syndrome_out = (dut.uo_out.value >> 4) & 0x7
+            syndrome_out = (dut.uio_out.value >> 4) & 0x7
             valid_out = (dut.uo_out.value >> 7) & 0x1
 
             dut._log.info(
@@ -312,7 +312,7 @@ async def test_single_bit_error(dut):
     # Extract final results
 
     decode_out = dut.uo_out.value & 0xF
-    syndrome_out = (dut.uo_out.value >> 4) & 0x7
+    syndrome_out = (dut.uio_out.value >> 4) & 0x7
     valid_out = (dut.uo_out.value >> 7) & 0x1
 
     dut._log.info(
