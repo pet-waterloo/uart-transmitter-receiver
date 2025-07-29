@@ -271,15 +271,30 @@ async def test_error_free_data(dut):
     for i in range(cycles_per_bit):
         await ClockCycles(dut.clk, 1)
         if (i+1) % 4 == 0:
-            decode_out = dut.uo_out.value & 0xF
-            syndrome_out = (dut.uo_out.value >> 4) & 0x7
-            valid_out = (dut.uo_out.value >> 7) & 0x1
+            # Extract data bits from specific positions
+            d0 = (dut.uo_out.value >> 2) & 0x1  # uo_out[2]
+            d1 = (dut.uo_out.value >> 3) & 0x1  # uo_out[3]
+            d2 = (dut.uo_out.value >> 5) & 0x1  # uo_out[5]
+            d3 = (dut.uo_out.value >> 6) & 0x1  # uo_out[6]
+            decode_out = (d3 << 3) | (d2 << 2) | (d1 << 1) | d0
+            
+            # Syndrome comes from uio_out
+            syndrome_out = dut.uio_out.value & 0x7  # uio_out[2:0]
+            valid_out = (dut.uo_out.value >> 7) & 0x1  # uo_out[7]
             dut._log.info(f"Cycle {i+1}: decode_out={decode_out:04b}, syndrome_out={syndrome_out:03b}, valid_out={valid_out}")
 
     # Extract and check final results
-    decode_out = dut.uo_out.value & 0xF
-    syndrome_out = (dut.uo_out.value >> 4) & 0x7
-    valid_out = (dut.uo_out.value >> 7) & 0x1
+    # Extract data bits from specific positions
+    d0 = (dut.uo_out.value >> 2) & 0x1  # uo_out[2]
+    d1 = (dut.uo_out.value >> 3) & 0x1  # uo_out[3]
+    d2 = (dut.uo_out.value >> 5) & 0x1  # uo_out[5]
+    d3 = (dut.uo_out.value >> 6) & 0x1  # uo_out[6]
+    decode_out = (d3 << 3) | (d2 << 2) | (d1 << 1) | d0
+    
+    # Syndrome comes from uio_out
+    syndrome_out = dut.uio_out.value & 0x7  # uio_out[2:0]
+    valid_out = (dut.uo_out.value >> 7) & 0x1  # uo_out[7]
+    
     dut._log.info(f"Hamming Decoder output: decode_out={decode_out:04b}, syndrome_out={syndrome_out:03b}, valid_out={valid_out}")
     dut._log.info("Verifying results...")
     dut._log.info(f"Final result: Valid={int(valid_out)}, Syndrome={int(syndrome_out):03b}, Data={int(decode_out):04b}")
@@ -325,15 +340,30 @@ async def test_single_bit_error(dut):
     for i in range(cycles_per_bit):
         await ClockCycles(dut.clk, 1)
         if (i+1) % 4 == 0:
-            decode_out = dut.uo_out.value & 0xF
-            syndrome_out = (dut.uo_out.value >> 4) & 0x7
-            valid_out = (dut.uo_out.value >> 7) & 0x1
+            # Extract data bits from specific positions
+            d0 = (dut.uo_out.value >> 2) & 0x1  # uo_out[2]
+            d1 = (dut.uo_out.value >> 3) & 0x1  # uo_out[3]
+            d2 = (dut.uo_out.value >> 5) & 0x1  # uo_out[5]
+            d3 = (dut.uo_out.value >> 6) & 0x1  # uo_out[6]
+            decode_out = (d3 << 3) | (d2 << 2) | (d1 << 1) | d0
+            
+            # Syndrome comes from uio_out
+            syndrome_out = dut.uio_out.value & 0x7  # uio_out[2:0]
+            valid_out = (dut.uo_out.value >> 7) & 0x1  # uo_out[7]
             dut._log.info(f"Cycle {i+1}: decode_out={decode_out:04b}, syndrome_out={syndrome_out:03b}, valid_out={valid_out}")
 
     # Extract and check final results
-    decode_out = dut.uo_out.value & 0xF
-    syndrome_out = (dut.uo_out.value >> 4) & 0x7
-    valid_out = (dut.uo_out.value >> 7) & 0x1
+    # Extract data bits from specific positions
+    d0 = (dut.uo_out.value >> 2) & 0x1  # uo_out[2]
+    d1 = (dut.uo_out.value >> 3) & 0x1  # uo_out[3]
+    d2 = (dut.uo_out.value >> 5) & 0x1  # uo_out[5]
+    d3 = (dut.uo_out.value >> 6) & 0x1  # uo_out[6]
+    decode_out = (d3 << 3) | (d2 << 2) | (d1 << 1) | d0
+    
+    # Syndrome comes from uio_out
+    syndrome_out = dut.uio_out.value & 0x7  # uio_out[2:0]
+    valid_out = (dut.uo_out.value >> 7) & 0x1  # uo_out[7]
+    
     dut._log.info(f"Hamming Decoder output: decode_out={decode_out:04b}, syndrome_out={syndrome_out:03b}, valid_out={valid_out}")
     dut._log.info("Verifying results...")
     dut._log.info(f"Final result: Valid={int(valid_out)}, Syndrome={int(syndrome_out):03b}, Data={int(decode_out):04b}")
