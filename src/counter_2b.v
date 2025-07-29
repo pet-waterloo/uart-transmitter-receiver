@@ -4,7 +4,7 @@
 
 `default_nettype none
 
-// 3-bit counter module ~ 8 states
+// 2-bit counter module ~ 4 states
 module tt_um_counter_2b (
     input  wire clk,      // clock
     input  wire rst_n,   // reset_n - low to reset

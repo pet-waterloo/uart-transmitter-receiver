@@ -13,17 +13,19 @@ project:
     # Your top module name must start with "tt_um_". Make it unique by including your github username:
     top_module: "tt_um_ultrasword_jonz9"
 
-  # List your project's source files here.
-  # Source files must be in ./src and you must list each source file separately, one per line.
-  # Don't forget to also update `PROJECT_SOURCES` in test/Makefile.
-  source_files:
-    - "project.v"
-    - "counter_2b.v"
-    - "counter_3b.v"
-    - "counter_8b.v"
-    - "hamming74_decoder.v"
-    - "statemachine_4.v"
-    - "uart_receiver.v"
+    # List your project's source files here.
+    # Source files must be in ./src and you must list each source file separately, one per line.
+    # Don't forget to also update `PROJECT_SOURCES` in test/Makefile.
+    source_files:
+        - "project.v"
+        - "counter_2b.v"
+        - "counter_3b.v"
+        - "counter_8b.v"
+        - "hamming_decoder_74.v"
+        - "hamming_encoder_74.v"
+        - "statemachine_4.v"
+        - "uart_receiver.v"
+        - "uart_transmitter.v"
 
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
 # This section is for the datasheet/website. Use descriptive names (e.g., RX, TX, MOSI, SCL, SEG_A, etc.).
