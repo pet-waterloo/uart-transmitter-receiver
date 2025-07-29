@@ -147,7 +147,6 @@ async def test_full_hamming_code(dut):
 
         tx_busy_active = False
         try:
-            tx_busy_active = busy_sig.value.integer != 0
+            tx_busy_active = safe_get_int_value(busy_sig) != 0
         except ValueError:
-            tx_busy_active = (busy_sig.value.integer & 0x10) != 0
-        tx_busy_active = safe_get_int_value(busy_sig, 0xFF) != 0  # Check full value
+            tx_busy_active = (safe_get_int_value(busy_sig) & 0x10) != 0
