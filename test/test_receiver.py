@@ -157,93 +157,49 @@ async def test_error_free_data(dut):
     cocotb.start_soon(clock.start())
     
     # --------------------------------------------------------- #
-    # reset
-
+    # Reset DUT
     await reset_dut(dut)
 
     # --------------------------------------------------------- #
-    # variables -- https://i-naeem.github.io/heyming/#/heyming
-    valid_hamming = 0b1111111  # Binary format
-    expected_data = 0b1111     # Expected decoded data bits
-    cycles_per_bit = 8  # Number of clock cycles per bit
-
-    # --------------------------------------------------------- #
-    # perform uart operation
+    # Variables
+    valid_hamming = 0b1111111  # 7-bit codeword
+    expected_data = 0b1111     # Expected decoded value
+    cycles_per_bit = 8         # UART baud timing
 
     dut._log.info(f"Sending valid codeword: {valid_hamming:07b}")
 
-    # perform UART cycle
+    # --------------------------------------------------------- #
+    # UART transmission
     await send_idle_bits(dut, dut.ui_in, cycles_per_bit, callback=callback_idle)
     await send_start_bit(dut, dut.ui_in, cycles_per_bit, callback=callback_start)
     await send_data_bits(dut, dut.ui_in, f"{valid_hamming:07b}"[::-1], cycles_per_bit, callback=callback_data)
     await send_stop_bit(dut, dut.ui_in, cycles_per_bit, callback=callback_stop)
-
-    # reset to idle
     await send_idle_bits(dut, dut.ui_in, cycles_per_bit, callback=callback_idle)
 
-    dut._log.info("UART frame sent, waiting for processing...")
-
     # --------------------------------------------------------- #
-    # output uart results
-
-    _uart_data = dut.uio_out.value & 0x7F  # Mask to get only the relevant bits
-    _uart_valid = (dut.uio_out.value >> 7) & 0x1
-
-    dut._log.info(f"UART OUTPUT: uart_data={_uart_data:07b}, uart_valid={_uart_valid}")
-
-    # --------------------------------------------------------- #
-    # wait for Hamming Decoder to process the input
-
-    for i in range(cycles_per_bit):
+    # Wait for decoder to process
+    for _ in range(cycles_per_bit):
         await ClockCycles(dut.clk, 1)
-        if (i+1) % 4 == 0:  # Print every few cycles to reduce log volume
-            decode_out = dut.uo_out.value & 0xF
-            syndrome_out = dut.uio_out.value & 0x7
-            valid_out = (dut.uo_out.value >> 7) & 0x1
-
-            dut._log.info(
-                f"Cycle {i+1}: decode_out={decode_out:04b}, syndrome_out={syndrome_out:03b}, "
-                f"valid_out={valid_out}"
-            )
 
     # --------------------------------------------------------- #
-    # Extract final results
+    # Extract signals
+    d0 = (dut.uo_out.value >> 2) & 0x1  # uo_out[2]
+    d1 = (dut.uo_out.value >> 3) & 0x1  # uo_out[3]
+    d2 = (dut.uo_out.value >> 5) & 0x1  # uo_out[5]
+    d3 = (dut.uo_out.value >> 6) & 0x1  # uo_out[6]
+    decode_out = (d3 << 3) | (d2 << 2) | (d1 << 1) | d0
 
-    decode_out = dut.uo_out.value & 0xF
-    syndrome_out = dut.uo_out.value & 0x7
-    valid_out = (dut.uo_out.value >> 7) & 0x1
+    syndrome_out = dut.uio_out.value & 0x7      # uio_out[2:0]
+    valid_out = (dut.uo_out.value >> 7) & 0x1    # uo_out[7]
 
     dut._log.info(
-        f"Hamming Decoder output: decode_out={decode_out:04b}, syndrome_out={syndrome_out:03b}, valid_out={valid_out}"
+        f"Decoder Output -> Data: {decode_out:04b}, Syndrome: {syndrome_out:03b}, Valid: {valid_out}"
     )
-    
+
     # --------------------------------------------------------- #
-    # Verify results
-
-    dut._log.info("Verifying results...")
-    dut._log.info(
-        f"Final result: Valid={int(valid_out)}, Syndrome={int(syndrome_out):03b}, "
-        f"Data={int(decode_out):04b}"
-    )
-
-    # More detailed assertions
-    if syndrome_out != 0:
-        dut._log.error(f"SYNDROME ERROR: Expected 0, got {syndrome_out:03b}")
-    if decode_out != expected_data:
-        dut._log.error(f"DATA ERROR: Expected {expected_data:04b}, got {decode_out:04b}")
-    if valid_out != 1:
-        dut._log.error(f"VALID ERROR: Expected 1, got {valid_out}")
-
-    # Continue with assertions
-    # Syndrome should be 0 (no errors)
-    assert syndrome_out == 0, f"Expected syndrome 0, got {syndrome_out:03b}"
-
-    # Data should match expected
-    assert (
-        decode_out == expected_data
-    ), f"Expected data {expected_data:04b}, got {decode_out:04b}"
-
-    # Valid should be 1
+    # Assertions
+    assert syndrome_out == 0, f"Expected syndrome 000, got {syndrome_out:03b}"
+    assert decode_out == expected_data, f"Expected data {expected_data:04b}, got {decode_out:04b}"
     assert valid_out == 1, f"Expected valid bit 1, got {valid_out}"
 
     dut._log.info("Error-free data test PASSED")
