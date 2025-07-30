@@ -32,7 +32,7 @@ This project implements a UART (Universal Asynchronous Receiver/Transmitter) sys
 │   ├── test_receiver.py      # Python cocotb tests for UART receiver and Hamming decoder
 │   └── test_transmitter.py   # Python cocotb tests for UART transmitter and Hamming encoder
 ├── docs/
-│   ├── info.md               # Project documentation and design notes
+│   ├── README.md               # Project documentation and design notes
 │   └── DesignDocument.pdf       # Full design document (PDF)
 ├── README.md                 # This file
 ├── info.yaml                 # Project metadata
