@@ -2,7 +2,7 @@
 
 # UART Transmitter & Receiver Project
 
--   [Read the official documentation for our project](https://docs.google.com/document/d/1tlF-jqzEoZz30VtqMln9JiZ-5Pucy0jMslVNLtq-4XA/edit?usp=sharing)
+- [Read the official documentation for our project](https://docs.google.com/document/d/1tlF-jqzEoZz30VtqMln9JiZ-5Pucy0jMslVNLtq-4XA/edit?usp=sharing)
 
 ## Overview
 
@@ -32,7 +32,8 @@ This project implements a UART (Universal Asynchronous Receiver/Transmitter) sys
 │   ├── test_receiver.py      # Python cocotb tests for UART receiver and Hamming decoder
 │   └── test_transmitter.py   # Python cocotb tests for UART transmitter and Hamming encoder
 ├── docs/
-│   └── info.md               # Project documentation and design notes
+│   ├── info.md               # Project documentation and design notes
+│   └── DesignDocument.pdf       # Full design document (PDF)
 ├── README.md                 # This file
 ├── info.yaml                 # Project metadata
 └── LICENSE                   # License information
@@ -42,24 +43,24 @@ This project implements a UART (Universal Asynchronous Receiver/Transmitter) sys
 
 1. **Install dependencies:**
 
-    - Python 3.8+
-    - [cocotb](https://cocotb.org/)
-    - Verilog simulator (e.g., Icarus Verilog)
-    - See `test/requirements.txt` for Python packages.
+   - Python 3.8+
+   - [cocotb](https://cocotb.org/)
+   - Verilog simulator (e.g., Icarus Verilog)
+   - See `test/requirements.txt` for Python packages.
 
 2. **Run tests:**
-    ```sh
-    cd test
-    make
-    ```
-    This will run all cocotb testbenches and report results.
+   ```sh
+   cd test
+   make
+   ```
+   This will run all cocotb testbenches and report results.
 
 ## Main Features
 
--   UART transmitter and receiver modules
--   Hamming(7,4) error correction
--   Comprehensive cocotb-based testbenches
+- UART transmitter and receiver modules
+- Hamming(7,4) error correction
+- Comprehensive cocotb-based testbenches
 
 ## Documentation
 
--   See the [project documentation](https://docs.google.com/document/d/1tlF-jqzEoZz30VtqMln9JiZ-5Pucy0jMslVNLtq-4XA/edit?usp=sharing) for detailed design and usage notes.
+- See the [project documentation](https://docs.google.com/document/d/1tlF-jqzEoZz30VtqMln9JiZ-5Pucy0jMslVNLtq-4XA/edit?usp=sharing) for detailed design and usage notes.

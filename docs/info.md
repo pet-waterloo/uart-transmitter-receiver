@@ -4,6 +4,8 @@
 
 **Peter and John Zhang**
 
+[**Download the full design document (PDF)**](./DesignDocument.pdf)
+
 ---
 
 ## Introduction
@@ -16,8 +18,8 @@ This project implements a self-contained UART transmitter and receiver with buil
 
 The main objective of this project is to implement functional components of a UART communication system in Verilog. The chip design is separated into 2 distinct sections:
 
--   **UART Transmitter**
--   **UART Receiver**
+- **UART Transmitter**
+- **UART Receiver**
 
 The transmitter and receiver both integrate a Hamming(7,4) encoder/decoder for single-bit error detection and correction—delivering a robust, error-corrected asynchronous serial link and demonstrating key digital-design skills (finite-state machines, clock-division, coding theory, and testbench verification) in the ECE 298A prototyping flow.
 
@@ -25,8 +27,8 @@ The transmitter and receiver both integrate a Hamming(7,4) encoder/decoder for s
 
 The goal is to reliably send and receive 4-bit data over an asynchronous serial link by:
 
--   **Transmitter**: Converting parallel bytes into start-framed Hamming-encoded bit streams
--   **Receiver**: Sampling and reassembling those streams, correcting any single-bit errors, and outputting the original bytes
+- **Transmitter**: Converting parallel bytes into start-framed Hamming-encoded bit streams
+- **Receiver**: Sampling and reassembling those streams, correcting any single-bit errors, and outputting the original bytes
 
 This ensures robust, error-corrected communication between two Verilog IP blocks.
 
@@ -36,35 +38,35 @@ This ensures robust, error-corrected communication between two Verilog IP blocks
 
 ### [1] Key Components
 
--   **8x Oversampler**  
-    Generates periodic “sample” ticks at a fixed rate of 8× the baud rate.
+- **8x Oversampler**  
+  Generates periodic “sample” ticks at a fixed rate of 8× the baud rate.
 
--   **Finite State Machine**  
-    Controls the 4 phases:
+- **Finite State Machine**  
+  Controls the 4 phases:
 
-    -   `IDLE` – line should be 1 (high)
-    -   `START` – reads 8 cycles of 0 (low)
-    -   `DATA` – reads 8 bits (64 cycles of data)
-    -   `STOP` – reads 8 cycles of 1 (high)
+  - `IDLE` – line should be 1 (high)
+  - `START` – reads 8 cycles of 0 (low)
+  - `DATA` – reads 8 bits (64 cycles of data)
+  - `STOP` – reads 8 cycles of 1 (high)
 
--   **Hamming(7,4) Encoder/Decoder**  
-    Inserted before transmitting and after receiving 4 bits of data.
+- **Hamming(7,4) Encoder/Decoder**  
+  Inserted before transmitting and after receiving 4 bits of data.
 
-    -   **TX Encoder**:
+  - **TX Encoder**:
 
-        -   Receives `[d0, d1, d2, d3]` as input data
-        -   Calculates 3 check bits
-        -   Outputs 7 bits as `[c0, c1, d0, c2, d1, d2, d3]`
+    - Receives `[d0, d1, d2, d3]` as input data
+    - Calculates 3 check bits
+    - Outputs 7 bits as `[c0, c1, d0, c2, d1, d2, d3]`
 
-    -   **RX Decoder**:
-        -   Receives `[c0, c1, d0, c2, d1, d2, d3]`
-        -   Calculates 3 parity bits
-        -   Performs bit correction
-        -   Outputs `[d0, d1, d2, d3]` parallel bits of data
+  - **RX Decoder**:
+    - Receives `[c0, c1, d0, c2, d1, d2, d3]`
+    - Calculates 3 parity bits
+    - Performs bit correction
+    - Outputs `[d0, d1, d2, d3]` parallel bits of data
 
--   **Serial I/O Streams**
-    -   Input – Single-bit `RX` line
-    -   Output – Single-bit `TX` line
+- **Serial I/O Streams**
+  - Input – Single-bit `RX` line
+  - Output – Single-bit `TX` line
 
 ---
 
@@ -111,22 +113,22 @@ This ensures robust, error-corrected communication between two Verilog IP blocks
 
 Verifies the UART transmitter and Hamming encoder by testing all 4-bit values. It checks:
 
--   Correct codeword in error-free case
--   Codeword changes when 1 or 2 bits are flipped
--   Assertions validate expected behavior
+- Correct codeword in error-free case
+- Codeword changes when 1 or 2 bits are flipped
+- Assertions validate expected behavior
 
 ### `test_error_free_data`
 
 Tests the UART receiver and decoder with valid codewords:
 
--   Decoder output matches expected 4-bit value
--   Syndrome = 0 (no error)
--   Valid signal is asserted
+- Decoder output matches expected 4-bit value
+- Syndrome = 0 (no error)
+- Valid signal is asserted
 
 ### `test_single_bit_error`
 
 Tests decoder's ability to fix single-bit errors:
 
--   Syndrome ≠ 0 (error detected)
--   Correct decoded output
--   Valid signal is asserted
+- Syndrome ≠ 0 (error detected)
+- Correct decoded output
+- Valid signal is asserted
