@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: © 2024 Tiny Tapeout
+# SPDX-License-Identifier: Apache-2.0
+
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles, RisingEdge
@@ -6,8 +9,9 @@ from cocotb.triggers import ClockCycles, RisingEdge
 # Shared Constants and Lookup Tables
 # =============================================================
 
-BAUD_CYCLES = 8  # UART oversampling factor
+BAUD_CYCLES = 8  # UART oversampling factor (cycles per bit)
 
+# Hamming(7,4) code table: maps 4-bit data to 7-bit codeword
 # inputs : [d0, d1, d2, d3]
 # outputs: [c0, c1, d0, c2, d1, d2, d3]
 HAMMING_CODE_TABLE = {
@@ -29,10 +33,12 @@ HAMMING_CODE_TABLE = {
     "1111": "1111111"
 }
 
+# Error masks for testing: no error, single-bit error, two-bit error
 NO_ERROR_MASK      = "0000000"
 ONE_BIT_ERROR_MASK = "0000100"
 TWO_BIT_ERROR_MASK = "0100010"
 
+# UART receiver state mapping for logging
 UART_STATE_MAP = {
     0: "IDLE",
     1: "START",
@@ -186,19 +192,23 @@ def callback_stop(dut, bit_index, bit_value, cycle_index, total_cycles):
 async def run_hamming_case(dut, data_bits_str, error_mask_str, output_sig, busy_sig):
     """Drive UART transmitter and check codeword with/without errors."""
     data_bits = int(data_bits_str, 2)
+    # Set data on input, pulse start bit
     dut.ui_in.value = data_bits
     dut.ui_in.value = data_bits | 0x10
     await ClockCycles(dut.clk, 1)
     dut.ui_in.value = data_bits
+    # Wait for UART start bit (TX low) or timeout
     for _ in range(10):
         if safe_get_int_value(output_sig) == 0:
             break
         await ClockCycles(dut.clk, 1)
+    # Capture UART frame (10 bits: start, data, stop)
     uart_frame = ""
     for bit in range(10):
         bit_value = safe_get_int_value(output_sig)
         uart_frame = str(bit_value) + uart_frame
         await ClockCycles(dut.clk, BAUD_CYCLES)
+    # Calculate expected and masked codewords
     expected_code = HAMMING_CODE_TABLE[data_bits_str]
     masked_code = "".join(["1" if int(a) ^ int(b) == 1 else "0" for a, b in zip(expected_code, error_mask_str)])
     return expected_code, masked_code
@@ -217,6 +227,7 @@ async def test_full_hamming_code(dut):
     busy_sig = get_signal_handle_safely(dut, "tx_busy", ["uo_out"])
     for data_bits_str in HAMMING_CODE_TABLE.keys():
         await apply_reset(dut)
+        # Test: no error
         original, masked = await run_hamming_case(
             dut, data_bits_str, NO_ERROR_MASK, encoder_code_sig, busy_sig
         )
@@ -224,6 +235,7 @@ async def test_full_hamming_code(dut):
             dut._log.error(f"[NO_ERR] expected {original}, got {masked} (input={data_bits_str})")
         assert masked == original
         await apply_reset(dut)
+        # Test: single-bit error
         original, masked = await run_hamming_case(
             dut, data_bits_str, ONE_BIT_ERROR_MASK, encoder_code_sig, busy_sig
         )
@@ -231,6 +243,7 @@ async def test_full_hamming_code(dut):
             dut._log.error(f"[1BIT_ERR] expected different codeword, but got same: {masked} (input={data_bits_str})")
         assert masked != original
         await apply_reset(dut)
+        # Test: two-bit error
         original, masked = await run_hamming_case(
             dut, data_bits_str, TWO_BIT_ERROR_MASK, encoder_code_sig, busy_sig
         )
@@ -267,34 +280,29 @@ async def test_error_free_data(dut):
     _uart_valid = (dut.uio_out.value >> 7) & 0x1
     dut._log.info(f"UART OUTPUT: uart_data={_uart_data:07b}, uart_valid={_uart_valid}")
 
-    # Wait for decoder to process
+    # Wait for decoder to process and log intermediate results
     for i in range(cycles_per_bit):
         await ClockCycles(dut.clk, 1)
         if (i+1) % 4 == 0:
-            # Extract data bits from specific positions
+            # Extract decoded data bits from output pins
             d0 = (dut.uo_out.value >> 2) & 0x1  # uo_out[2]
             d1 = (dut.uo_out.value >> 3) & 0x1  # uo_out[3]
             d2 = (dut.uo_out.value >> 5) & 0x1  # uo_out[5]
             d3 = (dut.uo_out.value >> 6) & 0x1  # uo_out[6]
             decode_out = (d3 << 3) | (d2 << 2) | (d1 << 1) | d0
-            
-            # Syndrome comes from uio_out
+            # Syndrome from uio_out
             syndrome_out = dut.uio_out.value & 0x7  # uio_out[2:0]
             valid_out = (dut.uo_out.value >> 7) & 0x1  # uo_out[7]
             dut._log.info(f"Cycle {i+1}: decode_out={decode_out:04b}, syndrome_out={syndrome_out:03b}, valid_out={valid_out}")
 
     # Extract and check final results
-    # Extract data bits from specific positions
     d0 = (dut.uo_out.value >> 2) & 0x1  # uo_out[2]
     d1 = (dut.uo_out.value >> 3) & 0x1  # uo_out[3]
     d2 = (dut.uo_out.value >> 5) & 0x1  # uo_out[5]
     d3 = (dut.uo_out.value >> 6) & 0x1  # uo_out[6]
     decode_out = (d3 << 3) | (d2 << 2) | (d1 << 1) | d0
-    
-    # Syndrome comes from uio_out
     syndrome_out = dut.uio_out.value & 0x7  # uio_out[2:0]
     valid_out = (dut.uo_out.value >> 7) & 0x1  # uo_out[7]
-    
     dut._log.info(f"Hamming Decoder output: decode_out={decode_out:04b}, syndrome_out={syndrome_out:03b}, valid_out={valid_out}")
     dut._log.info("Verifying results...")
     dut._log.info(f"Final result: Valid={int(valid_out)}, Syndrome={int(syndrome_out):03b}, Data={int(decode_out):04b}")
@@ -336,34 +344,29 @@ async def test_single_bit_error(dut):
     _uart_valid = (dut.uio_out.value >> 7) & 0x1
     dut._log.info(f"UART OUTPUT: uart_data={_uart_data:07b}, uart_valid={_uart_valid}")
 
-    # Wait for decoder to process
+    # Wait for decoder to process and log intermediate results
     for i in range(cycles_per_bit):
         await ClockCycles(dut.clk, 1)
         if (i+1) % 4 == 0:
-            # Extract data bits from specific positions
+            # Extract decoded data bits from output pins
             d0 = (dut.uo_out.value >> 2) & 0x1  # uo_out[2]
             d1 = (dut.uo_out.value >> 3) & 0x1  # uo_out[3]
             d2 = (dut.uo_out.value >> 5) & 0x1  # uo_out[5]
             d3 = (dut.uo_out.value >> 6) & 0x1  # uo_out[6]
             decode_out = (d3 << 3) | (d2 << 2) | (d1 << 1) | d0
-            
-            # Syndrome comes from uio_out
+            # Syndrome from uio_out
             syndrome_out = dut.uio_out.value & 0x7  # uio_out[2:0]
             valid_out = (dut.uo_out.value >> 7) & 0x1  # uo_out[7]
             dut._log.info(f"Cycle {i+1}: decode_out={decode_out:04b}, syndrome_out={syndrome_out:03b}, valid_out={valid_out}")
 
     # Extract and check final results
-    # Extract data bits from specific positions
     d0 = (dut.uo_out.value >> 2) & 0x1  # uo_out[2]
     d1 = (dut.uo_out.value >> 3) & 0x1  # uo_out[3]
     d2 = (dut.uo_out.value >> 5) & 0x1  # uo_out[5]
     d3 = (dut.uo_out.value >> 6) & 0x1  # uo_out[6]
     decode_out = (d3 << 3) | (d2 << 2) | (d1 << 1) | d0
-    
-    # Syndrome comes from uio_out
     syndrome_out = dut.uio_out.value & 0x7  # uio_out[2:0]
     valid_out = (dut.uo_out.value >> 7) & 0x1  # uo_out[7]
-    
     dut._log.info(f"Hamming Decoder output: decode_out={decode_out:04b}, syndrome_out={syndrome_out:03b}, valid_out={valid_out}")
     dut._log.info("Verifying results...")
     dut._log.info(f"Final result: Valid={int(valid_out)}, Syndrome={int(syndrome_out):03b}, Data={int(decode_out):04b}")

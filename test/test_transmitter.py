@@ -1,9 +1,14 @@
+# SPDX-FileCopyrightText: © 2024 Tiny Tapeout
+# SPDX-License-Identifier: Apache-2.0
+
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles, RisingEdge
 
+# UART baud rate: number of clock cycles per UART bit
 BAUD_CYCLES = 8
 
+# Hamming(7,4) code table: maps 4-bit data to 7-bit codeword
 HAMMING_CODE_TABLE = {
     "0000": "0000000",
     "0001": "1110001",
@@ -23,23 +28,27 @@ HAMMING_CODE_TABLE = {
     "1111": "0001111",
 }
 
+# Error masks for testing: no error, single-bit error, two-bit error
 NO_ERROR_MASK      = "0000000"
 ONE_BIT_ERROR_MASK = "0000100"
 TWO_BIT_ERROR_MASK = "0100010"
 
+# Signal names for encoder output and valid flags
 ENCODER_CODE_SIGNAL = "uo_out"
 ENCODER_VALID_SIGNAL = "uo_out"
 
-# extract integer value from signal, handles x values as 0
+# Safely extract integer value from a signal (handles 'x' as 0)
 def safe_get_int_value(signal, bit_mask=0x01):
     try:
         return signal.value.integer & bit_mask
     except ValueError:
         return 0
 
+# Convert integer to binary string of given width
 def int_to_binstr(value: int, width: int) -> str:
     return format(value, f"0{width}b")
 
+# Get a signal handle from DUT by name (supports nested attributes)
 def get_first_signal_handle(dut, signal):
     try:
         handle = dut
@@ -51,6 +60,7 @@ def get_first_signal_handle(dut, signal):
         pass
     raise AttributeError(f"None of {signal} exist in this design.")
 
+# Apply reset to DUT and clear inputs
 async def apply_reset(dut, cycles=2):
     dut.rst_n.value = 0
     dut.ui_in.value = 0
@@ -58,34 +68,36 @@ async def apply_reset(dut, cycles=2):
     dut.rst_n.value = 1
     await ClockCycles(dut.clk, cycles)
 
-# test for UART transmission
+# Run a single Hamming code test case through the UART transmitter
 async def run_hamming_case(dut, data_bits_str, error_mask_str, output_sig, busy_sig):
     data_bits = int(data_bits_str, 2)
+    # Set data on input, pulse start bit
     dut.ui_in.value = data_bits
-    dut.ui_in.value = data_bits | 0x10
+    dut.ui_in.value = data_bits | 0x10  # Set start bit (bit 4)
     await ClockCycles(dut.clk, 1)
-    dut.ui_in.value = data_bits
+    dut.ui_in.value = data_bits         # Clear start bit
 
-    # Wait for start bit (0) or timeout after 10 cycles
+    # Wait for UART start bit (TX low) or timeout
     for _ in range(10):
         if safe_get_int_value(output_sig) == 0:
             break
         await ClockCycles(dut.clk, 1)
 
-    # Capture UART frame - safely handle 'x' values
+    # Capture UART frame (10 bits: start, data, stop)
     uart_frame = ""
     for bit in range(10):
         bit_value = safe_get_int_value(output_sig)
         uart_frame = str(bit_value) + uart_frame
         await ClockCycles(dut.clk, BAUD_CYCLES)
     
+    # Calculate expected and masked codewords
     expected_code = HAMMING_CODE_TABLE[data_bits_str]
     masked_code = "".join(["1" if int(a) ^ int(b) == 1 else "0" 
                       for a, b in zip(expected_code, error_mask_str)])
     
     return expected_code, masked_code
 
-# helper function to get signal handle safely
+# Try to get a signal handle from DUT, fallback to alternatives if not found
 def get_signal_handle_safely(dut, primary_signal, fallback_signals=None):
     if fallback_signals is None:
         fallback_signals = []
@@ -107,18 +119,21 @@ def get_signal_handle_safely(dut, primary_signal, fallback_signals=None):
                 continue
     return dut.uo_out
 
-# main test to check hamming code and error cases
+# Main test: check all Hamming codewords and error cases
 @cocotb.test()
 async def test_full_hamming_code(dut):
+    # Start clock and reset DUT
     clock = Clock(dut.clk, 50, units="ns")
     cocotb.start_soon(clock.start())
     await apply_reset(dut)
 
+    # Get handles for encoder output and busy signals
     encoder_code_sig = get_signal_handle_safely(dut, "uo_out", ["tx"])
     busy_sig = get_signal_handle_safely(dut, "tx_busy", ["uo_out"])
 
     for data_bits_str in HAMMING_CODE_TABLE.keys():
         await apply_reset(dut)
+        # Test: no error
         original, masked = await run_hamming_case(
             dut, data_bits_str, NO_ERROR_MASK, encoder_code_sig, busy_sig
         )
@@ -127,6 +142,7 @@ async def test_full_hamming_code(dut):
         assert masked == original
 
         await apply_reset(dut)
+        # Test: single-bit error
         original, masked = await run_hamming_case(
             dut, data_bits_str, ONE_BIT_ERROR_MASK, encoder_code_sig, busy_sig
         )
@@ -135,6 +151,7 @@ async def test_full_hamming_code(dut):
         assert masked != original
 
         await apply_reset(dut)
+        # Test: two-bit error
         original, masked = await run_hamming_case(
             dut, data_bits_str, TWO_BIT_ERROR_MASK, encoder_code_sig, busy_sig
         )
@@ -142,9 +159,11 @@ async def test_full_hamming_code(dut):
             dut._log.error(f"[2BIT_ERR] expected different codeword, but got same: {masked} (input={data_bits_str})")
         assert masked != original
 
+        # Refresh signal handles in case of simulation changes
         encoder_code_sig = get_signal_handle_safely(dut, "uo_out", ["tx"])
         busy_sig = get_signal_handle_safely(dut, "tx_busy", ["uo_out"])
 
+        # Check TX busy flag (should be active during transmission)
         tx_busy_active = False
         try:
             tx_busy_active = safe_get_int_value(busy_sig) != 0

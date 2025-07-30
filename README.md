@@ -1,41 +1,65 @@
 ![](../../workflows/gds/badge.svg) ![](../../workflows/docs/badge.svg) ![](../../workflows/test/badge.svg) ![](../../workflows/fpga/badge.svg)
 
-# Tiny Tapeout Verilog Project Template
+# UART Transmitter & Receiver Project
 
-- [Read the documentation for project](docs/info.md)
+-   [Read the official documentation for our project](https://docs.google.com/document/d/1tlF-jqzEoZz30VtqMln9JiZ-5Pucy0jMslVNLtq-4XA/edit?usp=sharing)
 
-## What is Tiny Tapeout?
+## Overview
 
-Tiny Tapeout is an educational project that aims to make it easier and cheaper than ever to get your digital and analog designs manufactured on a real chip.
+This project implements a UART (Universal Asynchronous Receiver/Transmitter) system in Verilog, including both transmitter and receiver modules. It features Hamming(7,4) encoding/decoding for error detection and correction, and is designed for simulation and hardware verification.
 
-To learn more and get started, visit https://tinytapeout.com.
+## Directory Structure
 
-## Set up your Verilog project
+```
+├── src/
+│   ├── config.json           # Project configuration file
+│   ├── counter_2b.v          # 2-bit counter module
+│   ├── counter_3b.v          # 3-bit counter module
+│   ├── counter_8b.v          # 8-bit counter module
+│   ├── hamming_decoder_74.v  # Hamming(7,4) decoder module
+│   ├── hamming_encoder_74.v  # Hamming(7,4) encoder module
+│   ├── project.v             # Top-level project module
+│   ├── statemachine_4.v      # 4-state state machine module
+│   ├── uart_receiver.v       # UART receiver module
+│   └── uart_transmitter.v    # UART transmitter module
+├── test/
+│   ├── Makefile              # Automation for running cocotb simulations and tests
+│   ├── README.md             # Notes and instructions for the test suite
+│   ├── requirements.txt      # Python dependencies for running tests
+│   ├── tb.gtkw               # GTKWave configuration for waveform viewing
+│   ├── tb.v                  # Verilog testbench top module for simulation
+│   ├── test.py               # Main Python cocotb testbench for UART and Hamming modules
+│   ├── test_receiver.py      # Python cocotb tests for UART receiver and Hamming decoder
+│   └── test_transmitter.py   # Python cocotb tests for UART transmitter and Hamming encoder
+├── docs/
+│   └── info.md               # Project documentation and design notes
+├── README.md                 # This file
+├── info.yaml                 # Project metadata
+└── LICENSE                   # License information
+```
 
-1. Add your Verilog files to the `src` folder.
-2. Edit the [info.yaml](info.yaml) and update information about your project, paying special attention to the `source_files` and `top_module` properties. If you are upgrading an existing Tiny Tapeout project, check out our [online info.yaml migration tool](https://tinytapeout.github.io/tt-yaml-upgrade-tool/).
-3. Edit [docs/info.md](docs/info.md) and add a description of your project.
-4. Adapt the testbench to your design. See [test/README.md](test/README.md) for more information.
+## Quickstart
 
-The GitHub action will automatically build the ASIC files using [OpenLane](https://www.zerotoasiccourse.com/terminology/openlane/).
+1. **Install dependencies:**
 
-## Enable GitHub actions to build the results page
+    - Python 3.8+
+    - [cocotb](https://cocotb.org/)
+    - Verilog simulator (e.g., Icarus Verilog)
+    - See `test/requirements.txt` for Python packages.
 
-- [Enabling GitHub Pages](https://tinytapeout.com/faq/#my-github-action-is-failing-on-the-pages-part)
+2. **Run tests:**
+    ```sh
+    cd test
+    make
+    ```
+    This will run all cocotb testbenches and report results.
 
-## Resources
+## Main Features
 
-- [FAQ](https://tinytapeout.com/faq/)
-- [Digital design lessons](https://tinytapeout.com/digital_design/)
-- [Learn how semiconductors work](https://tinytapeout.com/siliwiz/)
-- [Join the community](https://tinytapeout.com/discord)
-- [Build your design locally](https://www.tinytapeout.com/guides/local-hardening/)
+-   UART transmitter and receiver modules
+-   Hamming(7,4) error correction
+-   Comprehensive cocotb-based testbenches
 
-## What next?
+## Documentation
 
-- [Submit your design to the next shuttle](https://app.tinytapeout.com/).
-- Edit [this README](README.md) and explain your design, how it works, and how to test it.
-- Share your project on your social network of choice:
-  - LinkedIn [#tinytapeout](https://www.linkedin.com/search/results/content/?keywords=%23tinytapeout) [@TinyTapeout](https://www.linkedin.com/company/100708654/)
-  - Mastodon [#tinytapeout](https://chaos.social/tags/tinytapeout) [@matthewvenn](https://chaos.social/@matthewvenn)
-  - X (formerly Twitter) [#tinytapeout](https://twitter.com/hashtag/tinytapeout) [@tinytapeout](https://twitter.com/tinytapeout)
+-   See the [project documentation](https://docs.google.com/document/d/1tlF-jqzEoZz30VtqMln9JiZ-5Pucy0jMslVNLtq-4XA/edit?usp=sharing) for detailed design and usage notes.

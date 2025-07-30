@@ -8,6 +8,7 @@ module tt_um_hamming_encoder_74 (
     output reg [6:0] code_out,
     output reg valid_out
 );
+    // parity bits output
     reg p1, p2, p3;
 
     always @(posedge clk or negedge rst_n) begin
