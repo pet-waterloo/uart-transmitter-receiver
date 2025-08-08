@@ -158,7 +158,7 @@ def calculate_hamming_decode(d3, d2, d1, c2, d0, c1, c0):
         error_bit = syndrome - 1
         d_bits = [0, 0, 0, d0, 0, d1, d2, d3]
         d_bits[error_bit] ^= 1
-        d0, d1, d2, d3 = d_bits
+        _, _, d0, _, d1, d2, d3 = d_bits
     return (d3 << 3) | (d2 << 2) | (d1 << 1) | d0
 
 # =============================================================
@@ -438,10 +438,9 @@ async def test_all_inputs(dut):
             await send_idle_bits(dut, dut.ui_in, cycles_per_bit, callback=callback_idle)
             await send_start_bit(dut, dut.ui_in, cycles_per_bit, callback=callback_start)
             await send_data_bits(dut, dut.ui_in, f"{tx_code_int:07b}"[::-1], cycles_per_bit, callback=reduced_callback_data)
-            dut._log.info("=" * 40)
             await send_stop_bit(dut, dut.ui_in, cycles_per_bit, callback=callback_stop)
             await send_idle_bits(dut, dut.ui_in, cycles_per_bit, callback=callback_idle)
-            dut._log.info("UART frame sent, waiting for processing...")
+            dut._log.info("=" * 40)
 
             # Output UART status only (no raw data available)
             _uart_valid = (dut.uo_out.value >> 1) & 0x1
@@ -475,7 +474,7 @@ async def test_all_inputs(dut):
 
             decode = (d3 << 3) | (d2 << 2) | (d1 << 1) | d0
 
-            dut._log.info("Verifying results...")
+            dut._log.info("")
             dut._log.info(f"Inputted Data: {tx_code_int:07b} | Expected Decode: {expected_decode:04b} | Actual Decode: {decode:04b} | ")
 
             # Evaluate pass/fail using calculated expected values
