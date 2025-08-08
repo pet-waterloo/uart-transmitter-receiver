@@ -146,37 +146,37 @@ async def send_stop_bit(dut, dut_channel, cycles_per_bit: int = 8, callback=None
             callback(dut, 0, 1, j, cycles_per_bit)
 
 # =============================================================
-# Callback Functions (Receiver Test)
+# Callback Functions (Receiver Test) - FIXED
 # =============================================================
 
 def callback_idle(dut, bit_index, bit_value, cycle_index, total_cycles):
     """Callback for idle bits."""
-    _uart_valid = (dut.uo_out.value >> 1) & 0x1        # uo_out[1] - FIXED
-    _state = (dut.uio_out.value >> 6) & 0x3             # uio_out[7:6] - FIXED
+    _uart_valid = (dut.uo_out.value >> 1) & 0x1        # uo_out[1] - UART valid
+    _state = (dut.uio_out.value >> 6) & 0x3             # uio_out[7:6] - UART state
     if cycle_index != total_cycles - 1:
         return
     dut._log.info(f"IDLE CB: STATE={UART_STATE_MAP.get(_state, 'UNKNOWN')}, bit_index={bit_index}, bit_value={bit_value}, uart_valid={_uart_valid}")
 
 def callback_start(dut, bit_index, bit_value, cycle_index, total_cycles):
     """Callback for start bit."""
-    _uart_valid = (dut.uo_out.value >> 1) & 0x1        # uo_out[1] - FIXED
-    _state = (dut.uio_out.value >> 6) & 0x3             # uio_out[7:6] - FIXED
+    _uart_valid = (dut.uo_out.value >> 1) & 0x1        # uo_out[1] - UART valid
+    _state = (dut.uio_out.value >> 6) & 0x3             # uio_out[7:6] - UART state
     if cycle_index != total_cycles - 1:
         return
     dut._log.info(f"START CB: STATE={UART_STATE_MAP.get(_state, 'UNKNOWN')}, bit_index={bit_index}, bit_value={bit_value}, uart_valid={_uart_valid}")
 
 def callback_data(dut, bit_index, bit_value, cycle_index, total_cycles):
     """Callback for data bits."""
-    _uart_valid = (dut.uo_out.value >> 1) & 0x1        # uo_out[1] - FIXED
-    _state = (dut.uio_out.value >> 6) & 0x3             # uio_out[7:6] - FIXED
+    _uart_valid = (dut.uo_out.value >> 1) & 0x1        # uo_out[1] - UART valid
+    _state = (dut.uio_out.value >> 6) & 0x3             # uio_out[7:6] - UART state
     dut._log.info(f"DATA CB: STATE={UART_STATE_MAP.get(_state, 'UNKNOWN')}, CYCLE [{cycle_index+1}/{total_cycles}] | Bit: [{bit_index+1}/7]={bit_value}, uart_valid={_uart_valid}")
     if cycle_index == total_cycles - 1:
         dut._log.info("="*30)
 
 def callback_stop(dut, bit_index, bit_value, cycle_index, total_cycles):
     """Callback for stop bit."""
-    _uart_valid = (dut.uo_out.value >> 1) & 0x1        # uo_out[1] - FIXED
-    _state = (dut.uio_out.value >> 6) & 0x3             # uio_out[7:6] - FIXED
+    _uart_valid = (dut.uo_out.value >> 1) & 0x1        # uo_out[1] - UART valid
+    _state = (dut.uio_out.value >> 6) & 0x3             # uio_out[7:6] - UART state
     if cycle_index != total_cycles - 1:
         return
     dut._log.info(f"STOP CB: STATE={UART_STATE_MAP.get(_state, 'UNKNOWN')}, bit_index={bit_index}, bit_value={bit_value}, uart_valid={_uart_valid}")
@@ -185,8 +185,9 @@ def reduced_callback_data(dut, bit_index, bit_value, cycle_index, total_cycles):
     """Reduced callback for data bits."""
     if cycle_index != total_cycles - 1:
         return
-    _uart_valid = (dut.uo_out.value >> 1) & 0x1        # uo_out[1] - FIXED
-    _state = (dut.uio_out.value >> 6) & 0x3             # uio_out[7:6] - FIXED
+    
+    _uart_valid = (dut.uo_out.value >> 1) & 0x1        # uo_out[1] - UART valid
+    _state = (dut.uio_out.value >> 6) & 0x3             # uio_out[7:6] - UART state
     dut._log.info(f"DATA CB: STATE={UART_STATE_MAP.get(_state, 'UNKNOWN')}, CYCLE [{cycle_index+1}/{total_cycles}] | Bit: [{bit_index+1}/7]={bit_value}, uart_valid={_uart_valid}")
 
 # =============================================================
@@ -273,7 +274,7 @@ async def test_full_hamming_code(dut):
         assert masked != original
 
 # =============================================================
-# Receiver Tests
+# Receiver Tests - FIXED
 # =============================================================
 
 @cocotb.test()
@@ -296,10 +297,9 @@ async def test_error_free_data(dut):
     await send_idle_bits(dut, dut.ui_in, cycles_per_bit, callback=callback_idle)
     dut._log.info("UART frame sent, waiting for processing...")
 
-    # Output UART results
-    _uart_data = dut.uio_out.value & 0x7F
-    _uart_valid = (dut.uio_out.value >> 7) & 0x1
-    dut._log.info(f"UART OUTPUT: uart_data={_uart_data:07b}, uart_valid={_uart_valid}")
+    # Output UART status only (no raw data available)
+    _uart_valid = (dut.uo_out.value >> 1) & 0x1
+    dut._log.info(f"UART STATUS: uart_valid={_uart_valid}")
 
     # Wait for decoder to process and log intermediate results
     for i in range(cycles_per_bit):
@@ -360,10 +360,9 @@ async def test_single_bit_error(dut):
     await send_idle_bits(dut, dut.ui_in, cycles_per_bit, callback=callback_idle)
     dut._log.info("UART frame sent, waiting for processing...")
 
-    # Output UART results
-    _uart_data = dut.uio_out.value & 0x7F
-    _uart_valid = (dut.uio_out.value >> 7) & 0x1
-    dut._log.info(f"UART OUTPUT: uart_data={_uart_data:07b}, uart_valid={_uart_valid}")
+    # Output UART status only (no raw data available)
+    _uart_valid = (dut.uo_out.value >> 1) & 0x1
+    dut._log.info(f"UART STATUS: uart_valid={_uart_valid}")
 
     # Wait for decoder to process and log intermediate results
     for i in range(cycles_per_bit):
@@ -430,8 +429,6 @@ async def test_all_inputs(dut):
             variants.append((f"ERR_BIT{bit_idx}", base_code_int ^ flip_mask, True))
 
         for label, tx_code_int, is_err in variants:
-            # do not reset DUT 
-
             sep = "=" * 60
             dut._log.info(sep)
             dut._log.info(f"Testing DATA_KEY={data_key} VARIANT={label}")
@@ -446,10 +443,9 @@ async def test_all_inputs(dut):
             await send_idle_bits(dut, dut.ui_in, cycles_per_bit, callback=callback_idle)
             dut._log.info("UART frame sent, waiting for processing...")
 
-            # Output UART results (matching existing tests)
-            _uart_data = dut.uio_out.value & 0x7F
-            _uart_valid = (dut.uio_out.value >> 7) & 0x1
-            dut._log.info(f"UART OUTPUT: uart_data={_uart_data:07b}, uart_valid={_uart_valid}")
+            # Output UART status only (no raw data available)
+            _uart_valid = (dut.uo_out.value >> 1) & 0x1
+            dut._log.info(f"UART STATUS: uart_valid={_uart_valid}")
 
             # Wait for decoder to process - sample once at the end of the bit period
             await ClockCycles(dut.clk, cycles_per_bit)
