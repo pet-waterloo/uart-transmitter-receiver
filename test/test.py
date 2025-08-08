@@ -185,6 +185,11 @@ def callback_stop(dut, bit_index, bit_value, cycle_index, total_cycles):
         return
     dut._log.info(f"STOP CB: STATE={UART_STATE_MAP.get(_state, 'UNKNOWN')}, bit_index={bit_index}, bit_value={bit_value}, uart_data={_uart_data:07b}, uart_valid={_uart_valid}")
 
+def reduced_callback_data(dut, bit_index, bit_value, cycle_index, total_cycles):
+    """Reduced callback for data bits."""
+    if cycle_index == total_cycles - 1:
+        callback_data(dut, bit_index, bit_value, cycle_index, total_cycles)
+
 # =============================================================
 # Transmitter Test Logic
 # =============================================================
@@ -437,7 +442,7 @@ async def test_all_inputs(dut):
             # Send UART frame: idle, start, data, stop, idle (matching existing tests)
             await send_idle_bits(dut, dut.ui_in, cycles_per_bit, callback=callback_idle)
             await send_start_bit(dut, dut.ui_in, cycles_per_bit, callback=callback_start)
-            await send_data_bits(dut, dut.ui_in, f"{tx_code_int:07b}"[::-1], cycles_per_bit, callback=callback_data)
+            await send_data_bits(dut, dut.ui_in, f"{tx_code_int:07b}"[::-1], cycles_per_bit, callback=reduced_callback_data)
             await send_stop_bit(dut, dut.ui_in, cycles_per_bit, callback=callback_stop)
             await send_idle_bits(dut, dut.ui_in, cycles_per_bit, callback=callback_idle)
             dut._log.info("UART frame sent, waiting for processing...")

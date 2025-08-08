@@ -60,6 +60,8 @@ module tt_um_uart_receiver (
                             state <= DATA;
                             bit_counter <= 3'b000;
                             sample_counter <= 3'b000;
+                            data_out <= 7'b0000000;     // Reset data register when entering DATA state
+                            valid_out <= 1'b0;          // Reset valid output
                         end else begin // Invalid start bit
                             state <= IDLE;
                             sample_counter <= 3'b000;
