@@ -22,49 +22,49 @@ module tt_um_ultrasword_jonz9 (
 
   // ------------------- Receiver Signals -------------------
   wire [2:0] rx_counter_out;    // Bit position from counter
-  wire [3:0] decode_out;        // Decoded data from Hamming decoder
-  wire [2:0] syndrome_out;      // Error syndrome from Hamming decoder
-  wire       valid_out;         // Valid signal from Hamming decoder
+  wire [3:0] rx_decode_out;     // Decoded data from Hamming decoder
+  wire [2:0] rx_syndrome_out;   // Error syndrome from Hamming decoder
+  wire       rx_valid_out;      // Valid signal from Hamming decoder
 
   // UART receiver wires
-  wire [6:0] uart_data;         // 7-bit Hamming code from UART
-  wire [1:0] uart_state;        // UART receiver state
-  wire       uart_valid;        // UART receiver valid
-  wire       hamming_ena;       // Enable for Hamming decoder
+  wire [6:0] rx_uart_data;      // 7-bit Hamming code from UART
+  wire [1:0] rx_uart_state;     // UART receiver state
+  wire       rx_uart_valid;     // UART receiver valid
+  wire       rx_hamming_ena;    // Enable for Hamming decoder
 
   // ------------------- Transmitter Signals ----------------
   wire       tx;                // UART TX output
   wire       tx_busy;           // TX busy signal
-  wire       hamming_valid;     // Hamming encoder valid
-  wire       start_transmission = ui_in[4];
-  wire [3:0] data_in            = ui_in[3:0];
-  wire [6:0] hamming_code;
+  wire       tx_hamming_valid;  // Hamming encoder valid
+  wire       tx_start_transmission = ui_in[4];
+  wire [3:0] tx_data_in         = ui_in[3:0];
+  wire [6:0] tx_hamming_code;
   wire [2:0] tx_counter_out;    // TX counter
 
   // Transmitter registers
-  reg        start_d;
-  reg [6:0]  hamming_code_d;
-  reg        hamming_valid_d;
-  reg        hamming_valid_q;
+  reg        tx_start_d;
+  reg [6:0]  tx_hamming_code_d;
+  reg        tx_hamming_valid_d;
+  reg        tx_hamming_valid_q;
   reg [7:0]  tx_data_reg;
 
   // ------------------- Outputs ----------------------------
-  assign uo_out[0] = tx;                 // TX pin
-  assign uo_out[4] = tx_busy;            // TX busy
-  assign uo_out[7] = valid_out;          // Decoder valid
-  assign uo_out[1] = uart_valid;         // Receiver valid
-  assign uo_out[2] = decode_out[0];      // Decoded data LSB
-  assign uo_out[3] = decode_out[1];      // Decoded data bit 1
-  assign uo_out[5] = decode_out[2];      // Decoded data bit 2
-  assign uo_out[6] = decode_out[3];      // Decoded data MSB
+  assign uo_out[0] = tx;                    // TX pin
+  assign uo_out[4] = tx_busy;               // TX busy
+  assign uo_out[7] = rx_valid_out;          // Decoder valid
+  assign uo_out[1] = rx_uart_valid;         // Receiver valid
+  assign uo_out[2] = rx_decode_out[0];      // Decoded data LSB
+  assign uo_out[3] = rx_decode_out[1];      // Decoded data bit 1
+  assign uo_out[5] = rx_decode_out[2];      // Decoded data bit 2
+  assign uo_out[6] = rx_decode_out[3];      // Decoded data MSB
 
-  assign uio_oe = 8'hFF;                 // All IOs as outputs
-  assign uio_out[2:0] = syndrome_out;    // Error syndrome
-  assign uio_out[5:3] = tx_counter_out;  // TX counter state
-  assign uio_out[7:6] = uart_state;      // UART receiver state
+  assign uio_oe = 8'hFF;                    // All IOs as outputs
+  assign uio_out[2:0] = rx_syndrome_out;    // Error syndrome
+  assign uio_out[5:3] = tx_counter_out;     // TX counter state
+  assign uio_out[7:6] = rx_uart_state;      // UART receiver state
 
   // ------------------- Receiver Logic ---------------------
-  assign hamming_ena = uart_valid && ena; // Enable decoder when UART valid
+  assign rx_hamming_ena = rx_uart_valid && ena; // Enable decoder when UART valid
   wire _unused = &{ui_in[7:5], uio_in, 1'b0}; // Unused inputs
 
   // UART receiver instance
@@ -73,52 +73,52 @@ module tt_um_ultrasword_jonz9 (
     .rst_n(rst_n),
     .ena(ena),
     .rx(ui_in[0]),              // UART RX input
-    .data_out(uart_data),       // 7-bit Hamming code
-    .state_out(uart_state),     // UART state
-    .valid_out(uart_valid)      // Valid when frame received
+    .data_out(rx_uart_data),    // 7-bit Hamming code
+    .state_out(rx_uart_state),  // UART state
+    .valid_out(rx_uart_valid)   // Valid when frame received
   );
 
   // Hamming decoder instance
   tt_um_hamming_decoder_74 decoder74 (
     .clk(clk),
     .rst_n(rst_n),
-    .ena(hamming_ena),          // Enable on UART valid
-    .decode_in(uart_data),      // UART data
-    .valid_out(valid_out),      // Decoder valid
-    .decode_out(decode_out),    // Decoded data
-    .debug_syndrome_out(syndrome_out), // Syndrome output
-    .debug_counter_out(rx_counter_out) // Counter output
+    .ena(rx_hamming_ena),              // Enable on UART valid
+    .decode_in(rx_uart_data),          // UART data
+    .valid_out(rx_valid_out),          // Decoder valid
+    .decode_out(rx_decode_out),        // Decoded data
+    .debug_syndrome_out(rx_syndrome_out),   // Syndrome output
+    .debug_counter_out(rx_counter_out)      // Counter output
   );
 
   // ------------------- Transmitter Logic ------------------
-  // Rising edge detector for start_transmission
-  wire rising_edge = start_transmission & ~start_d;
-  wire tx_start_pulse = hamming_valid & ~hamming_valid_q;
-  wire [7:0] padded_data_delayed = {1'b0, hamming_code_d};
+  // Rising edge detector for tx_start_transmission
+  wire tx_rising_edge = tx_start_transmission & ~tx_start_d;
+  wire tx_start_pulse = tx_hamming_valid & ~tx_hamming_valid_q;
+  wire [7:0] tx_padded_data_delayed = {1'b0, tx_hamming_code_d};
 
   always @(posedge clk) begin
     if (tx_start_pulse)
       $display("TX_START pulse generated with data 0x%h", tx_data_reg);
   end
 
-  // Sample start_transmission for edge detect
+  // Sample tx_start_transmission for edge detect
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n)
-      start_d <= 1'b0;
+      tx_start_d <= 1'b0;
     else
-      start_d <= start_transmission;
+      tx_start_d <= tx_start_transmission;
   end
 
   // Register delayed Hamming output/valid, track previous valid for pulse
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      hamming_code_d   <= 7'b0;
-      hamming_valid_d  <= 1'b0;
-      hamming_valid_q  <= 1'b0;
+      tx_hamming_code_d   <= 7'b0;
+      tx_hamming_valid_d  <= 1'b0;
+      tx_hamming_valid_q  <= 1'b0;
     end else begin
-      hamming_code_d   <= hamming_code;
-      hamming_valid_d  <= hamming_valid;
-      hamming_valid_q  <= hamming_valid_d;
+      tx_hamming_code_d   <= tx_hamming_code;
+      tx_hamming_valid_d  <= tx_hamming_valid;
+      tx_hamming_valid_q  <= tx_hamming_valid_d;
     end
   end
 
@@ -127,17 +127,17 @@ module tt_um_ultrasword_jonz9 (
     if (!rst_n)
       tx_data_reg <= 8'b0;
     else if (tx_start_pulse)
-      tx_data_reg <= padded_data_delayed;
+      tx_data_reg <= tx_padded_data_delayed;
   end
 
   // Hamming (7,4) Encoder instance
   tt_um_hamming_encoder_74 encoder (
     .clk       (clk),
     .rst_n     (rst_n),
-    .ena       (rising_edge),
-    .data_in   (data_in),
-    .code_out  (hamming_code),
-    .valid_out (hamming_valid)
+    .ena       (tx_rising_edge),
+    .data_in   (tx_data_in),
+    .code_out  (tx_hamming_code),
+    .valid_out (tx_hamming_valid)
   );
 
   // UART Transmitter instance
