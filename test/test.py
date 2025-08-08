@@ -447,30 +447,20 @@ async def test_all_inputs(dut):
             _uart_valid = (dut.uio_out.value >> 7) & 0x1
             dut._log.info(f"UART OUTPUT: uart_data={_uart_data:07b}, uart_valid={_uart_valid}")
 
-            # Wait for decoder to process and log intermediate results (matching existing tests)
-            for i in range(cycles_per_bit):
-                await ClockCycles(dut.clk, 1)
-                if (i+1) % 4 == 0:
-                    # Extract decoded data bits from output pins
-                    d0 = (dut.uo_out.value >> 2) & 0x1  # uo_out[2]
-                    d1 = (dut.uo_out.value >> 3) & 0x1  # uo_out[3]
-                    d2 = (dut.uo_out.value >> 5) & 0x1  # uo_out[5]
-                    d3 = (dut.uo_out.value >> 6) & 0x1  # uo_out[6]
-                    decode_out = (d3 << 3) | (d2 << 2) | (d1 << 1) | d0
-                    # Syndrome from uio_out
-                    syndrome_out = dut.uio_out.value & 0x7  # uio_out[2:0]
-                    valid_out = (dut.uo_out.value >> 7) & 0x1  # uo_out[7]
-                    dut._log.info(f"Cycle {i+1}: decode_out={decode_out:04b}, syndrome_out={syndrome_out:03b}, valid_out={valid_out}")
-
-            # Extract and check final results (matching existing tests)
+            # Wait for decoder to process - sample once at the end of the bit period
+            await ClockCycles(dut.clk, cycles_per_bit)
+            
+            # Extract decoded data bits from output pins (single sample)
             d0 = (dut.uo_out.value >> 2) & 0x1  # uo_out[2]
             d1 = (dut.uo_out.value >> 3) & 0x1  # uo_out[3]
             d2 = (dut.uo_out.value >> 5) & 0x1  # uo_out[5]
             d3 = (dut.uo_out.value >> 6) & 0x1  # uo_out[6]
             decode_out = (d3 << 3) | (d2 << 2) | (d1 << 1) | d0
+            # Syndrome from uio_out
             syndrome_out = dut.uio_out.value & 0x7  # uio_out[2:0]
             valid_out = (dut.uo_out.value >> 7) & 0x1  # uo_out[7]
-            
+            dut._log.info(f"Final sampling: decode_out={decode_out:04b}, syndrome_out={syndrome_out:03b}, valid_out={valid_out}")
+
             # Use calculate_hamming_decode to compute expected results
             # Extract bits from tx_code_int (received codeword)
             c0 = (tx_code_int >> 0) & 0x1
