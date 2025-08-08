@@ -145,6 +145,22 @@ async def send_stop_bit(dut, dut_channel, cycles_per_bit: int = 8, callback=None
         if callback:
             callback(dut, 0, 1, j, cycles_per_bit)
 
+def calculate_hamming_decode(d3, d2, d1, c2, d0, c1, c0):
+    # Calculate the parity bits
+    p0 = d0 ^ d1 ^ d2 ^ d3
+    p1 = d0 ^ d1 ^ c1 ^ c0
+    p2 = d2 ^ d1 ^ c2 ^ c0
+
+    # do single bit correction
+    syndrome = (p2 << 2) | (p1 << 1) | p0
+    if syndrome != 0:
+        # Correct the error
+        error_bit = syndrome - 1
+        d_bits = [0, 0, 0, d0, 0, d1, d2, d3]
+        d_bits[error_bit] ^= 1
+        d0, d1, d2, d3 = d_bits
+    return d0, d1, d2, d3
+
 # =============================================================
 # Callback Functions (Receiver Test) - FIXED
 # =============================================================
@@ -218,22 +234,6 @@ async def run_hamming_case(dut, data_bits_str, error_mask_str, output_sig, busy_
     masked_code = "".join(["1" if int(a) ^ int(b) == 1 else "0" for a, b in zip(expected_code, error_mask_str)])
     return expected_code, masked_code
 
-def calculate_hamming_decode(d3, d2, d1, c2, d0, c1, c0):
-    # Calculate the parity bits
-    p0 = d0 ^ d1 ^ d2 ^ d3
-    p1 = d0 ^ d1 ^ c1 ^ c0
-    p2 = d2 ^ d1 ^ c2 ^ c0
-
-    # do single bit correction
-    syndrome = (p2 << 2) | (p1 << 1) | p0
-    if syndrome != 0:
-        # Correct the error
-        error_bit = syndrome - 1
-        d_bits = [d0, d1, d2, d3]
-        if 0 <= error_bit < len(d_bits):
-            d_bits[error_bit] ^= 1
-        d0, d1, d2, d3 = d_bits
-    return d0, d1, d2, d3
 
 # =============================================================
 # Transmitter Test
