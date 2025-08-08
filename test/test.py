@@ -158,7 +158,7 @@ def calculate_hamming_decode(d3, d2, d1, c2, d0, c1, c0):
         error_bit = syndrome - 1
         d_bits = [0, 0, 0, d0, 0, d1, d2, d3]
         d_bits[error_bit] ^= 1
-        _, _, d0, _, d1, d2, d3 = d_bits
+        _, _, _, d0, _, d1, d2, d3 = d_bits
     return (d3 << 3) | (d2 << 2) | (d1 << 1) | d0
 
 # =============================================================
