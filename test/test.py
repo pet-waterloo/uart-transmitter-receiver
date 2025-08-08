@@ -440,7 +440,7 @@ async def test_all_inputs(dut):
             await send_data_bits(dut, dut.ui_in, f"{tx_code_int:07b}"[::-1], cycles_per_bit, callback=reduced_callback_data)
             await send_stop_bit(dut, dut.ui_in, cycles_per_bit, callback=callback_stop)
             await send_idle_bits(dut, dut.ui_in, cycles_per_bit, callback=callback_idle)
-            dut._log.info("=" * 40)
+            dut._log.info(sep)
 
             # Output UART status only (no raw data available)
             _uart_valid = (dut.uo_out.value >> 1) & 0x1
@@ -451,28 +451,26 @@ async def test_all_inputs(dut):
 
             # Use calculate_hamming_decode to compute expected results
             # Extract bits from tx_code_int (received codeword)
-            c0 = (tx_code_int >> 0) & 0x1
-            c1 = (tx_code_int >> 1) & 0x1
-            d0_rx = (tx_code_int >> 2) & 0x1
-            c2 = (tx_code_int >> 3) & 0x1
-            d1_rx = (tx_code_int >> 4) & 0x1
-            d2_rx = (tx_code_int >> 5) & 0x1
-            d3_rx = (tx_code_int >> 6) & 0x1
+            c0_tx = (tx_code_int >> 0) & 0x1
+            c1_tx = (tx_code_int >> 1) & 0x1
+            d0_tx = (tx_code_int >> 2) & 0x1
+            c2_tx = (tx_code_int >> 3) & 0x1
+            d1_tx = (tx_code_int >> 4) & 0x1
+            d2_tx = (tx_code_int >> 5) & 0x1
+            d3_tx = (tx_code_int >> 6) & 0x1
 
-            d0 = (dut.uo_out.value >> 2) & 0x1
-            d1 = (dut.uo_out.value >> 3) & 0x1
-            d2 = (dut.uo_out.value >> 5) & 0x1      # weird offset in project.v
-            d3 = (dut.uo_out.value >> 6) & 0x1      # same here
+            d0_rx = (dut.uo_out.value >> 2) & 0x1
+            d1_rx = (dut.uo_out.value >> 3) & 0x1
+            d2_rx = (dut.uo_out.value >> 5) & 0x1      # weird offset in project.v
+            d3_rx = (dut.uo_out.value >> 6) & 0x1      # same here
 
-            rx_valid_out = (dut.uo_out.value >> 7) & 0x1
+            rx_valid_out = (dut.uo_out.value >> 1) & 0x1
 
             # Calculate expected decode using your function
             expected_decode = calculate_hamming_decode(
-                d3_rx, d2_rx, d1_rx, c2, d0_rx, c1, c0
+                d3_tx, d2_tx, d1_tx, c2_tx, d0_tx, c1_tx, c0_tx
             )
-            expected_valid = 1
-
-            decode = (d3 << 3) | (d2 << 2) | (d1 << 1) | d0
+            decode = (d3_rx << 3) | (d2_rx << 2) | (d1_rx << 1) | d0_rx
 
             dut._log.info("")
             dut._log.info(f"Inputted Data: {tx_code_int:07b} | Expected Decode: {expected_decode:04b} | Actual Decode: {decode:04b} | ")
