@@ -382,3 +382,123 @@ async def test_single_bit_error(dut):
     assert decode_out == expected_data, f"Expected data {expected_data:04b}, got {decode_out:04b}"
     assert valid_out == 1, f"Expected valid bit 1, got {valid_out}"
     dut._log.info("Single bit error test PASSED")
+
+@cocotb.test()
+async def test_all_inputs(dut):
+    """
+    Exhaustively test all 4-bit data inputs (16 values) for:
+      - Correct reception of the valid Hamming(7,4) codeword (no error)
+      - Correction of each single-bit error (7 possible bit flips per codeword)
+    """
+
+    # Helper: map table key (d0 d1 d2 d3) -> expected decoded int (d3 d2 d1 d0)
+    def key_to_expected(key: str) -> int:
+        return int(key[::-1], 2)
+    
+    def safe_get_value(signal):
+        """Safely get integer value from signal, handling 'x' values."""
+        try:
+            return int(signal.value)
+        except (ValueError, TypeError):
+            return 0
+
+    # Prepare clock & reset
+    clock = Clock(dut.clk, 50, units="us")
+    cocotb.start_soon(clock.start())
+    cycles_per_bit = BAUD_CYCLES
+
+    total_pass = 0
+    total_fail = 0
+    expected_total = 16 * 8  # 16 data values * (1 no-error + 7 single-bit errors)
+
+    # Iterate all 4-bit data inputs (keys in table)
+    for data_key, codeword_str in HAMMING_CODE_TABLE.items():
+        # Build list of test variants: (label, code_int, is_error)
+        base_code_int = int(codeword_str, 2)
+        variants = [("NO_ERR", base_code_int, False)]
+        # Single-bit error injections (flip each of 7 bits)
+        for bit_idx in range(7):
+            # Codeword string index 0 is MSB char -> corresponds to bit position 6 in integer
+            flip_mask = 1 << (6 - bit_idx)
+            variants.append((f"ERR_BIT{bit_idx}", base_code_int ^ flip_mask, True))
+
+        for label, tx_code_int, is_err in variants:
+            # Reset DUT before each variant
+            await reset_dut(dut)
+
+            expected_data = key_to_expected(data_key)
+            # Precompute expectations
+            expect_syndrome_zero = not is_err
+
+            sep = "=" * 40
+            dut._log.info(sep)
+            dut._log.info(f"[TEST] DATA_KEY={data_key} (expected_dec={expected_data:04b}) "
+                          f"CODE={codeword_str} VARIANT={label} TX_CODE={tx_code_int:07b}")
+
+            # 1) Idle (pre-frame)
+            await send_idle_bits(dut, dut.ui_in, cycles_per_bit)
+
+            # 2) Start bit
+            await send_start_bit(dut, dut.ui_in, cycles_per_bit)
+
+            # 3) Data bits (LSB first for UART) with one print per bit-time
+            tx_bits_lsb_first = f"{tx_code_int:07b}"[::-1]
+            for bit_pos, bit_char in enumerate(tx_bits_lsb_first):
+                bit_val = int(bit_char)
+                # Drive this data bit for cycles_per_bit cycles
+                for cyc in range(cycles_per_bit):
+                    dut.ui_in.value = bit_val
+                    await ClockCycles(dut.clk, 1)
+                
+                # Sample UART data from uio_out (matching other tests)
+                uart_data_sample = safe_get_value(dut.uio_out) & 0x7F
+                dut._log.info(f"[RX BIT] data_key={data_key} variant={label} bit_index={bit_pos} "
+                              f"bit_val={bit_val} uart_data={uart_data_sample:07b}")
+
+            # 4) Stop bit
+            await send_stop_bit(dut, dut.ui_in, cycles_per_bit)
+
+            # 5) Post-frame idle guard
+            await send_idle_bits(dut, dut.ui_in, cycles_per_bit // 2)
+
+            # Allow decoder to assert valid_out (some extra cycles)
+            await ClockCycles(dut.clk, 4)
+
+            # Decode outputs from pins using safe extraction (matching other tests)
+            uo_out_val = safe_get_value(dut.uo_out)
+            uio_out_val = safe_get_value(dut.uio_out)
+            
+            d0 = (uo_out_val >> 2) & 0x1
+            d1 = (uo_out_val >> 3) & 0x1
+            d2 = (uo_out_val >> 5) & 0x1
+            d3 = (uo_out_val >> 6) & 0x1
+            decode_out = (d3 << 3) | (d2 << 2) | (d1 << 1) | d0
+            
+            syndrome_out = uio_out_val & 0x7
+            valid_out = (uo_out_val >> 7) & 0x1
+
+            dut._log.info(f"[DECODE] variant={label} decoded={decode_out:04b} "
+                          f"syndrome={syndrome_out:03b} valid={valid_out}")
+
+            # Evaluate pass/fail
+            pass_cond = (
+                valid_out == 1 and
+                decode_out == expected_data and
+                ((syndrome_out == 0) if expect_syndrome_zero else (syndrome_out != 0))
+            )
+
+            if pass_cond:
+                total_pass += 1
+                dut._log.info(f"[RESULT] PASS ({label})")
+            else:
+                total_fail += 1
+                dut._log.error(f"[RESULT] FAIL ({label}) "
+                               f"Expect decode={expected_data:04b} "
+                               f"syndrome_zero={expect_syndrome_zero}")
+            dut._log.info(sep)
+
+    dut._log.info(f"SUMMARY: total_pass={total_pass} total_fail={total_fail} "
+                  f"expected_total={expected_total}")
+    assert total_pass == expected_total and total_fail == 0, \
+        f"Unexpected results: pass={total_pass} fail={total_fail} expected={expected_total}"
+
