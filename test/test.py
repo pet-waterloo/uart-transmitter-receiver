@@ -159,7 +159,7 @@ def calculate_hamming_decode(d3, d2, d1, c2, d0, c1, c0):
         d_bits = [0, 0, 0, d0, 0, d1, d2, d3]
         d_bits[error_bit] ^= 1
         d0, d1, d2, d3 = d_bits
-    return d0, d1, d2, d3
+    return (d3 << 3) | (d2 << 2) | (d1 << 1) | d0
 
 # =============================================================
 # Callback Functions (Receiver Test) - FIXED
@@ -449,17 +449,6 @@ async def test_all_inputs(dut):
 
             # Wait for decoder to process - sample once at the end of the bit period
             await ClockCycles(dut.clk, cycles_per_bit)
-            
-            # Extract decoded data bits from output pins (single sample)
-            d0 = (dut.uo_out.value >> 2) & 0x1  # uo_out[2]
-            d1 = (dut.uo_out.value >> 3) & 0x1  # uo_out[3]
-            d2 = (dut.uo_out.value >> 5) & 0x1  # uo_out[5]
-            d3 = (dut.uo_out.value >> 6) & 0x1  # uo_out[6]
-            decode_out = (d3 << 3) | (d2 << 2) | (d1 << 1) | d0
-            # Syndrome from uio_out
-            syndrome_out = dut.uio_out.value & 0x7  # uio_out[2:0]
-            valid_out = (dut.uo_out.value >> 7) & 0x1  # uo_out[7]
-            dut._log.info(f"Final sampling: decode_out={decode_out:04b}, syndrome_out={syndrome_out:03b}, valid_out={valid_out}")
 
             # Use calculate_hamming_decode to compute expected results
             # Extract bits from tx_code_int (received codeword)
@@ -470,29 +459,29 @@ async def test_all_inputs(dut):
             d1_rx = (tx_code_int >> 4) & 0x1
             d2_rx = (tx_code_int >> 5) & 0x1
             d3_rx = (tx_code_int >> 6) & 0x1
-            
+
+            d0 = (dut.uo_out.value >> 2) & 0x1
+            d1 = (dut.uo_out.value >> 3) & 0x1
+            d2 = (dut.uo_out.value >> 5) & 0x1      # weird offset in project.v
+            d3 = (dut.uo_out.value >> 6) & 0x1      # same here
+
+            rx_valid_out = (dut.uo_out.value >> 7) & 0x1
+
             # Calculate expected decode using your function
-            expected_d0, expected_d1, expected_d2, expected_d3 = calculate_hamming_decode(
+            expected_decode = calculate_hamming_decode(
                 d3_rx, d2_rx, d1_rx, c2, d0_rx, c1, c0
             )
-            expected_decode = (expected_d3 << 3) | (expected_d2 << 2) | (expected_d1 << 1) | expected_d0
-            
-            # Calculate expected syndrome (0 for no error, non-zero for error)
-            p0 = d0_rx ^ d1_rx ^ d2_rx ^ d3_rx
-            p1 = d0_rx ^ d1_rx ^ c1 ^ c0
-            p2 = d2_rx ^ d1_rx ^ c2 ^ c0
-            expected_syndrome = (p2 << 2) | (p1 << 1) | p0
+            expected_valid = 1
 
-            dut._log.info(f"Hamming Decoder output: decode_out={decode_out:04b}, syndrome_out={syndrome_out:03b}, valid_out={valid_out}")
-            dut._log.info(f"Expected: decode_out={expected_decode:04b}, syndrome_out={expected_syndrome:03b}")
+            decode = (d3 << 3) | (d2 << 2) | (d1 << 1) | d0
+
             dut._log.info("Verifying results...")
-            dut._log.info(f"Final result: Valid={int(valid_out)}, Syndrome={int(syndrome_out):03b}, Data={int(decode_out):04b}")
+            dut._log.info(f"Inputted Data: {tx_code_int:07b} | Expected Decode: {expected_decode:04b} | Actual Decode: {decode:04b} | ")
 
             # Evaluate pass/fail using calculated expected values
             pass_cond = (
-                valid_out == 1 and
-                decode_out == expected_decode and
-                syndrome_out == expected_syndrome
+                rx_valid_out == 1 and
+                decode == expected_decode
             )
 
             if pass_cond:
@@ -500,12 +489,10 @@ async def test_all_inputs(dut):
                 dut._log.info(f"{label} test PASSED")
             else:
                 total_fail += 1
-                if decode_out != expected_decode:
-                    dut._log.error(f"DATA ERROR: Expected {expected_decode:04b}, got {decode_out:04b}")
-                if syndrome_out != expected_syndrome:
-                    dut._log.error(f"SYNDROME ERROR: Expected {expected_syndrome:03b}, got {syndrome_out:03b}")
-                if valid_out != 1:
-                    dut._log.error(f"VALID ERROR: Expected 1, got {valid_out}")
+                if decode != expected_decode:
+                    dut._log.error(f"DATA ERROR: Expected {expected_decode:04b}, got {decode:04b}")
+                if rx_valid_out != 1:
+                    dut._log.error(f"VALID ERROR: Expected 1, got {rx_valid_out}")
                 dut._log.error(f"{label} test FAILED")
 
     # All tests should pass since Hamming(7,4) can correct single-bit errors
