@@ -39,8 +39,6 @@ module tt_um_uart_receiver (
             data_out <= 7'b0000000;
             valid_out <= 1'b0;
         end else if (ena) begin
-            // Default: valid_out is normally low except when explicitly set
-            valid_out <= 1'b0;
             
             case (state)
                 // IDLE: Wait for start bit (rx goes HIGH in inverted UART)
