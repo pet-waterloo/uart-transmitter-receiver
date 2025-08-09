@@ -444,6 +444,8 @@ async def test_all_inputs(dut):
             d2_tx = (tx_code_int >> 5) & 0x1
             d3_tx = (tx_code_int >> 6) & 0x1
 
+            print(f"c0: {c0_tx}, c1: {c1_tx}, c2: {c2_tx}, d0: {d0_tx}, d1: {d1_tx}, d2: {d2_tx}, d3: {d3_tx}")
+
             d0_rx = (dut.uo_out.value >> 2) & 0x1
             d1_rx = (dut.uo_out.value >> 3) & 0x1
             d2_rx = (dut.uo_out.value >> 5) & 0x1      # weird offset in project.v
@@ -458,9 +460,8 @@ async def test_all_inputs(dut):
             parity = (p2_tx << 2) | (p1_tx << 1) | p0_tx
             if parity != 0:
                 # Correct the error
-                error_bit = parity - 1
                 d_bits = [0, 0, 0, d0_tx, 0, d1_tx, d2_tx, d3_tx]
-                d_bits[error_bit] ^= 1
+                d_bits[parity] ^= 1
                 _, _, _, d0_tx, _, d1_tx, d2_tx, d3_tx = d_bits
             expected_decode = (d3_tx << 3) | (d2_tx << 2) | (d1_tx << 1) | d0_tx
             decode = (d3_rx << 3) | (d2_rx << 2) | (d1_rx << 1) | d0_rx
