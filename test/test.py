@@ -145,21 +145,6 @@ async def send_stop_bit(dut, dut_channel, cycles_per_bit: int = 8, callback=None
         if callback:
             callback(dut, 0, 1, j, cycles_per_bit)
 
-def calculate_hamming_decode(d3, d2, d1, c2, d0, c1, c0):
-    # Calculate the parity bits
-    p0 = d0 ^ d1 ^ d2 ^ d3
-    p1 = d0 ^ d1 ^ c1 ^ c0
-    p2 = d2 ^ d1 ^ c2 ^ c0
-
-    # do single bit correction
-    syndrome = (p2 << 2) | (p1 << 1) | p0
-    if syndrome != 0:
-        # Correct the error
-        error_bit = syndrome - 1
-        d_bits = [0, 0, 0, d0, 0, d1, d2, d3]
-        d_bits[error_bit] ^= 1
-        _, _, _, d0, _, d1, d2, d3 = d_bits
-    return (d3 << 3) | (d2 << 2) | (d1 << 1) | d0
 
 # =============================================================
 # Callback Functions (Receiver Test) - FIXED
@@ -467,9 +452,17 @@ async def test_all_inputs(dut):
             rx_valid_out = (dut.uo_out.value >> 1) & 0x1
 
             # Calculate expected decode using your function
-            expected_decode = calculate_hamming_decode(
-                d3_tx, d2_tx, d1_tx, c2_tx, d0_tx, c1_tx, c0_tx
-            )
+            p0_tx = c0_tx ^ d0_tx ^ d1_tx ^ d3_tx
+            p1_tx = c1_tx ^ d0_tx ^ d2_tx ^ d3_tx
+            p2_tx = c2_tx ^ d1_tx ^ d2_tx ^ d3_tx
+            parity = (p2_tx << 2) | (p1_tx << 1) | p0_tx
+            if parity != 0:
+                # Correct the error
+                error_bit = parity - 1
+                d_bits = [0, 0, 0, d0_tx, 0, d1_tx, d2_tx, d3_tx]
+                d_bits[error_bit] ^= 1
+                _, _, _, d0_tx, _, d1_tx, d2_tx, d3_tx = d_bits
+            expected_decode = (d3_tx << 3) | (d2_tx << 2) | (d1_tx << 1) | d0_tx
             decode = (d3_rx << 3) | (d2_rx << 2) | (d1_rx << 1) | d0_rx
 
             dut._log.info("")
