@@ -23,19 +23,57 @@ module tt_um_hamming_decoder_74 (
     
     // -------------------------------------------------------------------------- //
     // Registers
-    reg [6:0] input_buffer;   // Buffer to store and correct input
+    reg [6:0] decode_buffer;
     reg [3:0] decode_out_reg; // 4-bit register for decoded output
     reg valid_out_reg;        // Register for valid output signal
 
     // Wire for syndrome calculation
     wire [2:0] syndrome;
+    wire c0_rx;
+    wire c1_rx;
+    wire d0_rx;
+    wire c2_rx;
+    wire d1_rx;
+    wire d2_rx;
+    wire d3_rx;
 
     // -------------------------------------------------------------------------- //
     // Syndrome calculation (same as before)
+
+    assign c0_rx = decode_in[0];
+    assign c1_rx = decode_in[1];
+    assign d0_rx = decode_in[2];
+    assign c2_rx = decode_in[3];
+    assign d1_rx = decode_in[4];
+    assign d2_rx = decode_in[5];
+    assign d3_rx = decode_in[6];
+
     assign syndrome = {
-        input_buffer[0] ^ input_buffer[2] ^ input_buffer[4] ^ input_buffer[6],
-        input_buffer[1] ^ input_buffer[2] ^ input_buffer[5] ^ input_buffer[6],
-        input_buffer[3] ^ input_buffer[4] ^ input_buffer[5] ^ input_buffer[6]
+        c0_rx ^ d0_rx ^ d1_rx ^ d3_rx,
+        c1_rx ^ d0_rx ^ d2_rx ^ d3_rx,
+        c2_rx ^ d1_rx ^ d2_rx ^ d3_rx
+    };
+
+    // use a mux to negate the appropriate bits based on the syndrome
+    always @(*) begin
+        case (syndrome)
+            3'b001: c0_rx = ~c0_rx; // c0
+            3'b010: c1_rx = ~c1_rx; // c1
+            3'b011: d0_rx = ~d0_rx; // d0
+            3'b100: c2_rx = ~c2_rx; // c2
+            3'b101: d1_rx = ~d1_rx; // d1
+            3'b110: d2_rx = ~d2_rx; // d2
+            3'b111: d3_rx = ~d3_rx; // d3
+            default: ;
+        endcase
+    end
+
+    // extract data bits as well
+    assign decode_out[3:0] = {
+        d3_rx,
+        d2_rx,
+        d1_rx,
+        d0_rx
     };
 
     // -------------------------------------------------------------------------- //
@@ -47,30 +85,6 @@ module tt_um_hamming_decoder_74 (
             decode_out_reg <= 4'b0000;
             valid_out_reg <= 1'b0;
         end else if (ena) begin
-            // Load input data
-            input_buffer <= decode_in;
-            
-            // Correct errors if needed
-            if (syndrome != 3'b000) begin
-                // Error detected, attempt to correct
-                case (syndrome)
-                    3'b001: input_buffer[0] <= ~input_buffer[0]; // c0
-                    3'b010: input_buffer[1] <= ~input_buffer[1]; // c1
-                    3'b011: input_buffer[2] <= ~input_buffer[2]; // d0
-                    3'b100: input_buffer[3] <= ~input_buffer[3]; // c2
-                    3'b101: input_buffer[4] <= ~input_buffer[4]; // d1
-                    3'b110: input_buffer[5] <= ~input_buffer[5]; // d2
-                    3'b111: input_buffer[6] <= ~input_buffer[6]; // d3
-                    default: ; // No action for other syndromes
-                endcase
-            end
-            
-            // Extract the data bits
-            decode_out_reg[0] <= input_buffer[2]; // d0
-            decode_out_reg[1] <= input_buffer[4]; // d1
-            decode_out_reg[2] <= input_buffer[5]; // d2
-            decode_out_reg[3] <= input_buffer[6]; // d3
-            
             // Set valid output flag
             valid_out_reg <= 1'b1;
         end else begin
