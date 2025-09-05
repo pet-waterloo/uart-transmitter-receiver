@@ -16,12 +16,29 @@ module tb ();
   // Wire up the inputs and outputs:
   reg clk;
   reg rst_n;
+  always #5 clk = ~clk;
+
   reg ena;
   reg [7:0] ui_in;
   reg [7:0] uio_in;
   wire [7:0] uo_out;
   wire [7:0] uio_out;
   wire [7:0] uio_oe;
+
+  wire VPWR, VGND, VNB, VPB;
+  supply1 VPWR, VPB;
+  supply0 VGND, VNB;
+
+  initial begin
+    clk = 1'b0;
+    rst_n = 1'b0;
+    ena = 1'b1;
+    ui_in = 8'hFF;
+    uio_in = 8'h00;
+    repeat (8) @(posedge clk);
+    rst_n = 1'b1;
+    repeat (8) @(posedge clk);
+  end
 
   // Replace tt_um_example with your module name:
   tt_um_ultrasword_jonz9 user_project (
@@ -33,6 +50,12 @@ module tb ();
       .ena    (ena),      // enable - goes high when design is selected
       .clk    (clk),      // clock
       .rst_n  (rst_n)     // not reset
+`ifdef USE_POWER_PINS
+    , .VPWR   (VPWR),
+      .VGND   (VGND),
+      .VNB    (VNB),
+      .VPB    (VPB)
+`endif
   );
 
 endmodule
