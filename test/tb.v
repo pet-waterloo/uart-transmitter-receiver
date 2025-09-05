@@ -35,9 +35,9 @@ module tb ();
     ena = 1'b1;
     ui_in = 8'hFF;
     uio_in = 8'h00;
-    repeat (8) @(posedge clk);
+    repeat (16) @(posedge clk);
     rst_n = 1'b1;
-    repeat (8) @(posedge clk);
+    repeat (16) @(posedge clk);
   end
 
   // Replace tt_um_example with your module name:
