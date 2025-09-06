@@ -60,32 +60,45 @@ module tt_um_ultrasword_jonz9 (
   // assign uo_out[2] = rx_decode_out[0];      // Decoded data LSB
   // assign uo_out[1] = rx_uart_valid;         // Receiver valid
 
-  reg [7:0] uo_out_r;
-  assign uo_out = uo_out_r;
+  // Clean RX-related bits with a small register bank
+  reg       out7_dec_valid;   // uo_out[7]
+  reg [1:0] out_dec_hi;       // {uo_out[6], uo_out[5]}
+  reg [1:0] out_dec_lo;       // {uo_out[3], uo_out[2]}
+  reg       out1_rx_valid;    // uo_out[1]
 
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
-      uo_out_r <= 8'h00;
+      out7_dec_valid <= 1'b0;
+      out_dec_hi     <= 2'b00;
+      out_dec_lo     <= 2'b00;
+      out1_rx_valid  <= 1'b0;
     end else begin
-      uo_out_r[0] <= tx;
-      uo_out_r[4] <= tx_busy;
+      // RX valid: drive 0 when not valid to avoid X
+      out1_rx_valid  <= rx_uart_valid ? 1'b1 : 1'b0;
 
-      // X-safe update for RX valid
-      if (rx_uart_valid)
-        uo_out_r[1] <= 1'b1;
-      else
-        uo_out_r[1] <= 1'b0;
-
-      // Update decoded data only when valid; otherwise hold
+      // Update decoded data only when the decoder is valid; otherwise hold
       if (rx_valid_out) begin
-        uo_out_r[7]   <= 1'b1;
-        uo_out_r[6:2] <= rx_decode_out;
+        out7_dec_valid <= 1'b1;
+        out_dec_hi     <= {rx_decode_out[3], rx_decode_out[2]};
+        out_dec_lo     <= {rx_decode_out[1], rx_decode_out[0]};
       end else begin
-        uo_out_r[7]   <= 1'b0;
-        // uo_out_r[6:2] hold last value
+        out7_dec_valid <= 1'b0; // or hold, per your spec
+        // out_dec_* hold previous values
       end
     end
   end
+
+  // Keep TX path cycle-accurate (no added latency)
+  assign uo_out = {
+    out7_dec_valid,            // [7]
+    out_dec_hi[1],             // [6]
+    out_dec_hi[0],             // [5]
+    tx_busy,                   // [4]  <— direct
+    out_dec_lo[1],             // [3]
+    out_dec_lo[0],             // [2]
+    out1_rx_valid,             // [1]
+    tx                         // [0]  <— direct
+  };
 
   assign uio_oe = 8'hFF;                    // All IOs as outputs
   assign uio_out[2:0] = rx_syndrome_out;    // Error syndrome
