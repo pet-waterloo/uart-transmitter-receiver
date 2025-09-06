@@ -49,16 +49,43 @@ module tt_um_ultrasword_jonz9 (
   reg [7:0]  tx_data_reg;
 
   // ------------------- Outputs ----------------------------
-  assign uo_out[4] = tx_busy;               // TX busy
-  assign uo_out[0] = tx;                    // TX pin
+  // assign uo_out[4] = tx_busy;               // TX busy
+  // assign uo_out[0] = tx;                    // TX pin
 
-  assign uo_out[7] = rx_valid_out;          // Decoder valid
-  assign uo_out[6] = rx_decode_out[3];      // Decoded data MSB
-  assign uo_out[5] = rx_decode_out[2];      // Decoded data bit 2
+  // assign uo_out[7] = rx_valid_out;          // Decoder valid
+  // assign uo_out[6] = rx_decode_out[3];      // Decoded data MSB
+  // assign uo_out[5] = rx_decode_out[2];      // Decoded data bit 2
 
-  assign uo_out[3] = rx_decode_out[1];      // Decoded data bit 1
-  assign uo_out[2] = rx_decode_out[0];      // Decoded data LSB
-  assign uo_out[1] = rx_uart_valid;         // Receiver valid
+  // assign uo_out[3] = rx_decode_out[1];      // Decoded data bit 1
+  // assign uo_out[2] = rx_decode_out[0];      // Decoded data LSB
+  // assign uo_out[1] = rx_uart_valid;         // Receiver valid
+
+  reg [7:0] uo_out_r;
+  assign uo_out = uo_out_r;
+
+  always @(posedge clk or negedge rst_n) begin
+    if (!rst_n) begin
+      uo_out_r <= 8'h00;
+    end else begin
+      uo_out_r[0] <= tx;
+      uo_out_r[4] <= tx_busy;
+
+      // X-safe update for RX valid
+      if (rx_uart_valid)
+        uo_out_r[1] <= 1'b1;
+      else
+        uo_out_r[1] <= 1'b0;
+
+      // Update decoded data only when valid; otherwise hold
+      if (rx_valid_out) begin
+        uo_out_r[7]   <= 1'b1;
+        uo_out_r[6:2] <= rx_decode_out;
+      end else begin
+        uo_out_r[7]   <= 1'b0;
+        // uo_out_r[6:2] hold last value
+      end
+    end
+  end
 
   assign uio_oe = 8'hFF;                    // All IOs as outputs
   assign uio_out[2:0] = rx_syndrome_out;    // Error syndrome
